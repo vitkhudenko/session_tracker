@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SessionTracker Sample</string>
+    <string name="title_activity_login">SessionTracker Sample: Log in</string>
+    <string name="title_activity_main">SessionTracker Sample: Main screen</string>
+</resources>
