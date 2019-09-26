@@ -131,6 +131,10 @@ tracking by SessionTracker with the same `INACTIVE` state.
     the `autoUntrackStates` (a `SessionTracker` constructor parameter).
     This callback is the right place to release any resources for the session (a DB connection, a DI scope, etc.).
 
+## Usage examples
+
+A sample app, that uses [Koin][koin] DI framework, can be found at the [sample_app_koin][sample_app_koin] module.
+
 ## Threading
 
 SessionTracker is thread-safe. Public methods are declared as `synchronized`. Thread-safe compound actions are
@@ -147,7 +151,7 @@ SessionTracker is a synchronous tool, meaning it neither creates threads nor use
 
 ## Miscellaneous
 
-Typical SessionTracker usage implies being a singleton in your app.
+Typical simple SessionTracker usage implies being a singleton in your app.
 
 ## License
 
@@ -172,3 +176,6 @@ Typical SessionTracker usage implies being a singleton in your app.
 > LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 > SOFTWARE.
+
+[koin]: https://github.com/InsertKoinIO/koin
+[sample_app_koin]: https://github.com/vitkhudenko/session_tracker/tree/master/sample_app_koin
