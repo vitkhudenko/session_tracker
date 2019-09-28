@@ -225,7 +225,7 @@ class SessionTrackerRelaxedModeTest {
             },
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         try {
@@ -472,7 +472,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         with(sessionTracker) {
@@ -563,7 +563,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -580,6 +580,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "consumeEvent: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertEquals(
             listOf(
@@ -615,7 +620,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -632,6 +637,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "trackSession: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertEquals(listOf(SessionRecord(session1, State.INACTIVE)), sessionTracker.getSessions())
     }
@@ -661,7 +671,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -678,6 +688,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "untrackSession: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertEquals(listOf(SessionRecord(session1, State.INACTIVE)), sessionTracker.getSessions())
     }
@@ -713,7 +728,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -731,6 +746,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "untrackAllSessions: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertEquals(
             listOf(
@@ -763,7 +783,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -780,6 +800,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "consumeEvent: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertEquals(listOf(SessionRecord(session, State.ACTIVE)), sessionTracker.getSessions())
     }
@@ -806,7 +831,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -823,6 +848,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "trackSession: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertEquals(listOf(SessionRecord(session, State.ACTIVE)), sessionTracker.getSessions())
     }
@@ -849,7 +879,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -866,6 +896,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "untrackSession: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertEquals(listOf(SessionRecord(session, State.ACTIVE)), sessionTracker.getSessions())
     }
@@ -892,7 +927,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -909,6 +944,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "untrackAllSessions: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertEquals(listOf(SessionRecord(session, State.ACTIVE)), sessionTracker.getSessions())
     }
@@ -943,7 +983,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -961,6 +1001,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "consumeEvent: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertEquals(listOf(SessionRecord(session2, state2)), sessionTracker.getSessions())
     }
@@ -989,7 +1034,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -1006,6 +1051,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "trackSession: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertTrue(sessionTracker.getSessions().isEmpty())
     }
@@ -1040,7 +1090,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -1058,6 +1108,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "untrackSession: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertEquals(listOf(SessionRecord(session2, state2)), sessionTracker.getSessions())
     }
@@ -1092,7 +1147,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -1111,6 +1166,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "untrackAllSessions: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertEquals(listOf(SessionRecord(session2, state2)), sessionTracker.getSessions())
     }
@@ -1146,7 +1206,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -1164,6 +1224,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "consumeEvent: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertTrue(sessionTracker.getSessions().isEmpty())
     }
@@ -1199,7 +1264,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -1217,6 +1282,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "trackSession: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertTrue(sessionTracker.getSessions().isEmpty())
     }
@@ -1252,7 +1322,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -1270,6 +1340,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "untrackSession: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertTrue(sessionTracker.getSessions().isEmpty())
     }
@@ -1305,7 +1380,7 @@ class SessionTrackerRelaxedModeTest {
             sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
             autoUntrackStates = emptySet(),
             mode = mode,
-            logger = mock()
+            logger = logger
         )
 
         sessionTrackerRef.set(sessionTracker)
@@ -1323,6 +1398,11 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).e(
+            SessionTracker.TAG,
+            "untrackAllSessions: misuse detected, accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
+        )
 
         assertTrue(sessionTracker.getSessions().isEmpty())
     }
