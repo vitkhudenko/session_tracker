@@ -109,27 +109,33 @@ tracking by SessionTracker with the same `INACTIVE` state.
 
 `SessionTracker.Listener` has useful for your app callbacks that allow to manage session resources appropriately:
 
-- `onSessionTrackingStarted(session: S, initState: State)`
+- `onSessionTrackingStarted(sessionTracker: SessionTracker<S, Event, State>, session: S, initState: State)`
 
     SessionTracker has added session to the list of tracked sessions.
     This happens as a result of calling `SessionTracker.trackSession(session, state)` or `SessionTracker.initialize()`.
     This callback is the right place to create any resources for the session (a DB connection, a DI scope, etc.)
     depending on the initState.
-    
-- `onSessionStateChanged(session: S, oldState: State, newState: State)`
+
+- `onSessionStateChanged(sessionTracker: SessionTracker<S, Event, State>, session: S, oldState: State, newState: State)`
 
     Session state has changed.
     This happens as a result of calling `SessionTracker.consumeEvent(sessionId, event)`.
     This callback is the right place to create or release any resources for the session (a DB connection,
     a DI scope, etc.).
-    
-- `onSessionTrackingStopped(session: S, state: State)`
+
+- `onSessionTrackingStopped(sessionTracker: SessionTracker<S, Event, State>, session: S, state: State)`
 
     SessionTracker has removed session from the list of tracked sessions. This happens as a result
-    of calling `SessionTracker.untrackSession(sessionId)` or `SessionTracker.untrackAllSessions()`.
+    of calling `SessionTracker.untrackSession(sessionId)`.
     This may also happen as a result of calling `SessionTracker.consumeEvent` if session appears in one of 
     the `autoUntrackStates` (a `SessionTracker` constructor parameter).
     This callback is the right place to release any resources for the session (a DB connection, a DI scope, etc.).
+
+- `onAllSessionsTrackingStopped(sessionTracker: SessionTracker<S, Event, State>, sessionsData: List<Pair<S, State>>)`
+
+    SessionTracker has removed session from the list of tracked sessions. This happens as a result
+    of calling `SessionTracker.untrackAllSessions()`.
+    This callback is the right place to release any resources for the sessions (a DB connection, a DI scope, etc.).
 
 ## Usage examples
 
