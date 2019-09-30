@@ -8,7 +8,7 @@ afterEvaluate {
     generateReleaseBuildConfig.enabled = false
 }
 
-def libraryVersionName = '0.1.0'
+def libraryVersionName = '0.2.0'
 def artifactName = 'SessionTracker'
 
 android {
