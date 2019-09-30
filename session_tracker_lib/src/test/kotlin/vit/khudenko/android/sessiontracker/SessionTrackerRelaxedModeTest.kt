@@ -185,11 +185,12 @@ class SessionTrackerRelaxedModeTest {
 
         val storage = createStorageMock(listOf(SessionRecord(session, State.FORGOTTEN)))
         val listener = mock<SessionTracker.Listener<Session, Event, State>>()
+        val sessionStateTransitionsSupplier = mock<ISessionStateTransitionsSupplier<Session, Event, State>>()
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
             listener = listener,
-            sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
+            sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = setOf(State.FORGOTTEN),
             mode = mode,
             logger = logger
@@ -204,7 +205,7 @@ class SessionTrackerRelaxedModeTest {
                     ", rejecting this session"
         )
         verifyNoMoreInteractions(storage)
-        verifyZeroInteractions(listener)
+        verifyZeroInteractions(sessionStateTransitionsSupplier, listener)
     }
 
     @Test
@@ -218,10 +219,8 @@ class SessionTrackerRelaxedModeTest {
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
             listener = listener,
-            sessionStateTransitionsSupplier = object : ISessionStateTransitionsSupplier<Session, Event, State> {
-                override fun getStateTransitions(session: Session): List<Transition<Event, State>> {
-                    return emptyList() // incomplete config
-                }
+            sessionStateTransitionsSupplier = mock {
+                on { getStateTransitions(any()) } doReturn emptyList() // incomplete config
             },
             autoUntrackStates = emptySet(),
             mode = mode,
@@ -279,11 +278,12 @@ class SessionTrackerRelaxedModeTest {
 
         val storage = createStorageMock(emptyList())
         val listener = mock<SessionTracker.Listener<Session, Event, State>>()
+        val sessionStateTransitionsSupplier = mock<ISessionStateTransitionsSupplier<Session, Event, State>>()
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
             listener = listener,
-            sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
+            sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = setOf(state),
             mode = mode,
             logger = logger
@@ -301,7 +301,7 @@ class SessionTrackerRelaxedModeTest {
                     "rejecting this session"
         )
         verifyNoMoreInteractions(storage)
-        verifyZeroInteractions(listener)
+        verifyZeroInteractions(sessionStateTransitionsSupplier, listener)
 
         assertTrue(sessionTracker.getSessions().isEmpty())
     }
@@ -406,7 +406,10 @@ class SessionTrackerRelaxedModeTest {
             verify(listener).onSessionTrackingStarted(sessionTracker, session1, state1)
             verify(listener).onSessionTrackingStarted(sessionTracker, session2, state2)
             verify(storage).deleteAllSessionRecords()
-            verify(listener).onAllSessionsTrackingStopped(sessionTracker, listOf(session1 to state1, session2 to state2))
+            verify(listener).onAllSessionsTrackingStopped(
+                sessionTracker,
+                listOf(session1 to state1, session2 to state2)
+            )
         }
 
         verifyNoMoreInteractions(storage, listener)
@@ -528,6 +531,164 @@ class SessionTrackerRelaxedModeTest {
         verifyNoMoreInteractions(storage, listener)
 
         assertEquals(listOf(SessionRecord(session2, state2)), sessionTracker.getSessions())
+    }
+
+    @Test
+    fun `consumeEvent() called and session appears in a auto-untrack state being an intermediate state in transition`() {
+        val session1 = Session("session_id_1")
+        val state1 = State.ACTIVE
+
+        val session2 = Session("session_id_2")
+        val state2 = State.INACTIVE
+
+        val storage = createStorageMock(listOf(SessionRecord(session1, state1), SessionRecord(session2, state2)))
+        val listener = mock<SessionTracker.Listener<Session, Event, State>>()
+
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = mock {
+                on { getStateTransitions(any()) } doReturn listOf(
+                    Transition(Event.LOGOUT, listOf(State.ACTIVE, State.FORGOTTEN, State.INACTIVE))
+                )
+            },
+            autoUntrackStates = setOf(State.FORGOTTEN),
+            mode = mode,
+            logger = logger
+        )
+
+        with(sessionTracker) {
+            initialize()
+            assertTrue(consumeEvent(session1.sessionId, Event.LOGOUT))
+        }
+
+        with(inOrder(listener, storage)) {
+            verify(storage).readAllSessionRecords()
+            verify(listener).onSessionTrackingStarted(sessionTracker, session1, state1)
+            verify(listener).onSessionTrackingStarted(sessionTracker, session2, state2)
+            verify(listener).onSessionStateChanged(sessionTracker, session1, state1, State.FORGOTTEN)
+            verify(storage).deleteSessionRecord(session1.sessionId)
+            verify(listener).onSessionTrackingStopped(sessionTracker, session1, State.FORGOTTEN)
+        }
+
+        verifyNoMoreInteractions(storage, listener)
+
+        assertEquals(listOf(SessionRecord(session2, state2)), sessionTracker.getSessions())
+    }
+
+    @Test
+    fun `consumeEvent() called and session appears in a auto-untrack state being an intermediate state in transition, and listener calls untrackSession()`() {
+        val session1 = Session("session_id_1")
+        val state1 = State.ACTIVE
+
+        val session2 = Session("session_id_2")
+        val state2 = State.INACTIVE
+
+        val sessionTrackerRef = AtomicReference<SessionTracker<Session, Event, State>>()
+
+        val storage = createStorageMock(listOf(SessionRecord(session1, state1), SessionRecord(session2, state2)))
+        val listener = mock<SessionTracker.Listener<Session, Event, State>> {
+            on { onSessionStateChanged(any(), eq(session1), eq(state1), eq(State.FORGOTTEN)) } doAnswer {
+                sessionTrackerRef.get().untrackSession(session1.sessionId)
+                Unit
+            }
+        }
+
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = mock {
+                on { getStateTransitions(any()) } doReturn listOf(
+                    Transition(Event.LOGOUT, listOf(State.ACTIVE, State.FORGOTTEN, State.INACTIVE))
+                )
+            },
+            autoUntrackStates = setOf(State.FORGOTTEN),
+            mode = mode,
+            logger = logger
+        )
+
+        sessionTrackerRef.set(sessionTracker)
+
+        with(sessionTracker) {
+            initialize()
+            assertTrue(consumeEvent(session1.sessionId, Event.LOGOUT))
+        }
+
+        with(inOrder(listener, storage)) {
+            verify(storage).readAllSessionRecords()
+            verify(listener).onSessionTrackingStarted(sessionTracker, session1, state1)
+            verify(listener).onSessionTrackingStarted(sessionTracker, session2, state2)
+            verify(listener).onSessionStateChanged(sessionTracker, session1, state1, State.FORGOTTEN)
+            verify(storage).deleteSessionRecord(session1.sessionId)
+            verify(listener).onSessionTrackingStopped(sessionTracker, session1, State.FORGOTTEN)
+        }
+
+        verifyNoMoreInteractions(storage, listener)
+
+        verify(logger).w(
+            SessionTracker.TAG,
+            "untrackSession: session with ID '${session1.sessionId}' is already untracking"
+        )
+
+        assertEquals(listOf(SessionRecord(session2, state2)), sessionTracker.getSessions())
+    }
+
+    @Test
+    fun `consumeEvent() called and session appears in a auto-untrack state being an intermediate state in transition, and listener calls untrackAllSessions()()`() {
+        val session1 = Session("session_id_1")
+        val state1 = State.ACTIVE
+
+        val session2 = Session("session_id_2")
+        val state2 = State.INACTIVE
+
+        val sessionTrackerRef = AtomicReference<SessionTracker<Session, Event, State>>()
+
+        val storage = createStorageMock(listOf(SessionRecord(session1, state1), SessionRecord(session2, state2)))
+        val listener = mock<SessionTracker.Listener<Session, Event, State>> {
+            on { onSessionStateChanged(any(), eq(session1), eq(state1), eq(State.FORGOTTEN)) } doAnswer {
+                sessionTrackerRef.get().untrackAllSessions()
+                Unit
+            }
+        }
+
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = mock {
+                on { getStateTransitions(any()) } doReturn listOf(
+                    Transition(Event.LOGOUT, listOf(State.ACTIVE, State.FORGOTTEN, State.INACTIVE))
+                )
+            },
+            autoUntrackStates = setOf(State.FORGOTTEN),
+            mode = mode,
+            logger = logger
+        )
+
+        sessionTrackerRef.set(sessionTracker)
+
+        with(sessionTracker) {
+            initialize()
+            assertTrue(consumeEvent(session1.sessionId, Event.LOGOUT))
+        }
+
+        with(inOrder(listener, storage)) {
+            verify(storage).readAllSessionRecords()
+            verify(listener).onSessionTrackingStarted(sessionTracker, session1, state1)
+            verify(listener).onSessionTrackingStarted(sessionTracker, session2, state2)
+            verify(listener).onSessionStateChanged(sessionTracker, session1, state1, State.FORGOTTEN)
+            verify(storage).deleteAllSessionRecords()
+            verify(listener).onAllSessionsTrackingStopped(
+                sessionTracker,
+                listOf(
+                    session1 to State.FORGOTTEN,
+                    session2 to state2
+                )
+            )
+        }
+
+        verifyNoMoreInteractions(storage, listener)
+
+        assertTrue(sessionTracker.getSessions().isEmpty())
     }
 
     //////////////////////// ---------- detecting misuse at ISessionTrackerStorage ----------- ////////////////////////
@@ -1220,7 +1381,10 @@ class SessionTrackerRelaxedModeTest {
             verify(listener).onSessionTrackingStarted(sessionTracker, session1, state1)
             verify(listener).onSessionTrackingStarted(sessionTracker, session2, state2)
             verify(storage).deleteAllSessionRecords()
-            verify(listener).onAllSessionsTrackingStopped(sessionTracker, listOf(session1 to state1, session2 to state2))
+            verify(listener).onAllSessionsTrackingStopped(
+                sessionTracker,
+                listOf(session1 to state1, session2 to state2)
+            )
         }
 
         verifyNoMoreInteractions(storage, listener)
@@ -1278,7 +1442,10 @@ class SessionTrackerRelaxedModeTest {
             verify(listener).onSessionTrackingStarted(sessionTracker, session1, state1)
             verify(listener).onSessionTrackingStarted(sessionTracker, session2, state2)
             verify(storage).deleteAllSessionRecords()
-            verify(listener).onAllSessionsTrackingStopped(sessionTracker, listOf(session1 to state1, session2 to state2))
+            verify(listener).onAllSessionsTrackingStopped(
+                sessionTracker,
+                listOf(session1 to state1, session2 to state2)
+            )
         }
 
         verifyNoMoreInteractions(storage, listener)
@@ -1336,7 +1503,10 @@ class SessionTrackerRelaxedModeTest {
             verify(listener).onSessionTrackingStarted(sessionTracker, session1, state1)
             verify(listener).onSessionTrackingStarted(sessionTracker, session2, state2)
             verify(storage).deleteAllSessionRecords()
-            verify(listener).onAllSessionsTrackingStopped(sessionTracker, listOf(session1 to state1, session2 to state2))
+            verify(listener).onAllSessionsTrackingStopped(
+                sessionTracker,
+                listOf(session1 to state1, session2 to state2)
+            )
         }
 
         verifyNoMoreInteractions(storage, listener)
@@ -1394,7 +1564,10 @@ class SessionTrackerRelaxedModeTest {
             verify(listener).onSessionTrackingStarted(sessionTracker, session1, state1)
             verify(listener).onSessionTrackingStarted(sessionTracker, session2, state2)
             verify(storage).deleteAllSessionRecords()
-            verify(listener).onAllSessionsTrackingStopped(sessionTracker, listOf(session1 to state1, session2 to state2))
+            verify(listener).onAllSessionsTrackingStopped(
+                sessionTracker,
+                listOf(session1 to state1, session2 to state2)
+            )
         }
 
         verifyNoMoreInteractions(storage, listener)
@@ -1408,23 +1581,21 @@ class SessionTrackerRelaxedModeTest {
     }
 
     private fun createSessionStateTransitionsSupplier() =
-        object : ISessionStateTransitionsSupplier<Session, Event, State> {
-            override fun getStateTransitions(session: Session): List<Transition<Event, State>> {
-                return listOf(
-                    Transition(
-                        Event.LOGIN,
-                        listOf(State.INACTIVE, State.ACTIVE)
-                    ),
-                    Transition(
-                        Event.LOGOUT,
-                        listOf(State.ACTIVE, State.INACTIVE)
-                    ),
-                    Transition(
-                        Event.LOGOUT_AND_FORGET,
-                        listOf(State.ACTIVE, State.FORGOTTEN)
-                    )
+        mock<ISessionStateTransitionsSupplier<Session, Event, State>> {
+            on { getStateTransitions(any()) } doReturn listOf(
+                Transition(
+                    Event.LOGIN,
+                    listOf(State.INACTIVE, State.ACTIVE)
+                ),
+                Transition(
+                    Event.LOGOUT,
+                    listOf(State.ACTIVE, State.INACTIVE)
+                ),
+                Transition(
+                    Event.LOGOUT_AND_FORGET,
+                    listOf(State.ACTIVE, State.FORGOTTEN)
                 )
-            }
+            )
         }
 
     private fun createStorageMock(
