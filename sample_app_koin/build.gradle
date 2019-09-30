@@ -47,7 +47,7 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.1.0'
 
-    implementation 'vit.khudenko.android:sessiontracker:0.1.0'
+    implementation project(':session_tracker_lib')
 
     def rxAndroidVersion = '2.1.1'
     def rxJavaVersion = '2.2.10'
