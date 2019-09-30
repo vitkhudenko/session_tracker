@@ -26,7 +26,7 @@ class App : Application() {
             )
         }
 
-        val sessionStore = getKoin().get<SessionTracker<Session, Session.Event, Session.State>>()
-        sessionStore.initialize()
+        val sessionTracker = getKoin().get<SessionTracker<Session, Session.Event, Session.State>>()
+        sessionTracker.initialize()
     }
 }
