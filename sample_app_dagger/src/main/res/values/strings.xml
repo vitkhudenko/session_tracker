@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SampleAppDagger</string>
+    <string name="title_activity_login">Login</string>
+    <string name="title_activity_main">Main Screen</string>
+</resources>
