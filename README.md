@@ -139,7 +139,10 @@ tracking by SessionTracker with the same `INACTIVE` state.
 
 ## Usage examples
 
-A sample app, that uses [Koin][koin] DI framework, can be found at the [sample_app_koin][sample_app_koin] module.
+| DI framework      | Sample app module                      |
+|-------------------|----------------------------------------|
+| [Koin][koin]      | [sample_app_koin][sample_app_koin]     |
+| [Dagger][dagger]  | [sample_app_dagger][sample_app_dagger] |
 
 ## Threading
 
@@ -185,3 +188,5 @@ Typical simple SessionTracker usage implies being a singleton in your app.
 
 [koin]: https://github.com/InsertKoinIO/koin
 [sample_app_koin]: https://github.com/vitkhudenko/session_tracker/tree/master/sample_app_koin
+[dagger]: https://github.com/google/dagger
+[sample_app_dagger]: https://github.com/vitkhudenko/session_tracker/tree/master/sample_app_dagger
