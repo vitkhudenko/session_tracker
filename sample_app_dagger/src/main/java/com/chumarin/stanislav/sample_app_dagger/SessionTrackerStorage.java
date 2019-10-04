@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -82,16 +83,30 @@ public class SessionTrackerStorage implements ISessionTrackerStorage<Session, Se
 
     @Override
     public void updateSessionRecord(@NotNull SessionRecord<Session, Session.State> sessionRecord) {
-
+        List<SessionRecord<Session, Session.State>> storedSessionRecords = readAllSessionRecords();
+        ListIterator<SessionRecord<Session, Session.State>> sessionRecordIterator = storedSessionRecords.listIterator();
+        while (sessionRecordIterator.hasNext()) {
+            SessionRecord<Session, Session.State> next = sessionRecordIterator.next();
+            if (next.getSession().getSessionId().equals(sessionRecord.getSession().getSessionId())) {
+                sessionRecordIterator.set(next);
+                break;
+            }
+        }
+        saveSessionRecords(storedSessionRecords);
     }
 
     @Override
     public void deleteSessionRecord(@NotNull String sessionId) {
-        saveSessionRecords(
-                readAllSessionRecords().stream()
-                        .filter(sessionRecord -> !sessionRecord.getSession().getSessionId().equals(sessionId))
-                        .collect(Collectors.toList())
-        );
+        List<SessionRecord<Session, Session.State>> storedSessionRecords = readAllSessionRecords();
+        ListIterator<SessionRecord<Session, Session.State>> sessionRecordIterator = storedSessionRecords.listIterator();
+        while (sessionRecordIterator.hasNext()) {
+            SessionRecord<Session, Session.State> next = sessionRecordIterator.next();
+            if (next.getSession().getSessionId().equals(sessionId)) {
+                sessionRecordIterator.remove();
+                break;
+            }
+        }
+        saveSessionRecords(storedSessionRecords);
     }
 
     @Override

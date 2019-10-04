@@ -30,11 +30,11 @@ public class LoginViewModel extends BaseViewModel {
     private Disposable disposable;
 
     @Inject
-    public LoginViewModel(@NonNull SessionTracker<Session, Session.Event, Session.State> sessionTracker) {
+    LoginViewModel(@NonNull SessionTracker<Session, Session.Event, Session.State> sessionTracker) {
         this.sessionTracker = sessionTracker;
     }
 
-    public void onLoginButtonClicked(@NonNull String userId) {
+    void onLoginButtonClicked(@NonNull String userId) {
         state.onNext(State.Progress.INSTANCE);
 
         disposable = Observable.fromCallable(() -> {
@@ -58,7 +58,7 @@ public class LoginViewModel extends BaseViewModel {
                 .subscribe(loggedInUserId -> state.onNext(new State.Success(loggedInUserId)));
     }
 
-    public Observable<State> observeState() {
+    Observable<State> observeState() {
         return state.hide();
     }
 
@@ -71,34 +71,34 @@ public class LoginViewModel extends BaseViewModel {
         }
     }
 
-    public static abstract class State {
+    static abstract class State {
         private State() {
         }
 
-        public static class Idle extends State {
-            public static final Idle INSTANCE = new Idle();
+        static class Idle extends State {
+            static final Idle INSTANCE = new Idle();
 
             private Idle() {
             }
         }
 
-        public static class Progress extends State {
-            public static final Progress INSTANCE = new Progress();
+        static class Progress extends State {
+            static final Progress INSTANCE = new Progress();
 
             private Progress() {
             }
         }
 
-        public static class Success extends State {
+        static class Success extends State {
             @NonNull
             private final String userId;
 
-            public Success(@NonNull String userId) {
+            Success(@NonNull String userId) {
                 this.userId = userId;
             }
 
             @NonNull
-            public String getUserId() {
+            String getUserId() {
                 return userId;
             }
         }

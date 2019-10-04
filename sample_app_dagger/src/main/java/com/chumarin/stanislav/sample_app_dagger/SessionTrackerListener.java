@@ -71,6 +71,8 @@ public class SessionTrackerListener implements SessionTracker.Listener<Session, 
             case FORGOTTEN:
                 closeDaggerScope(session.getSessionId());
                 break;
+            default:
+                throw new IllegalArgumentException("Unknown newState [" + newState + "]");
         }
     }
 

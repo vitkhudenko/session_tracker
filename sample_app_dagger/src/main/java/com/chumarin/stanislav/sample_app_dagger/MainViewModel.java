@@ -2,13 +2,10 @@ package com.chumarin.stanislav.sample_app_dagger;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.lifecycle.ViewModel;
 
-import com.chumarin.stanislav.sample_app_dagger.di.UserModule;
+import com.chumarin.stanislav.sample_app_dagger.util.BaseViewModel;
 
 import java.util.concurrent.TimeUnit;
-
-import javax.inject.Named;
 
 import io.reactivex.Completable;
 import io.reactivex.Observable;
@@ -18,7 +15,7 @@ import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.BehaviorSubject;
 import vit.khudenko.android.sessiontracker.SessionTracker;
 
-public class MainViewModel extends ViewModel {
+public class MainViewModel extends BaseViewModel {
 
     @NonNull
     private final String sessionId;
@@ -31,13 +28,13 @@ public class MainViewModel extends ViewModel {
     @Nullable
     private Disposable disposable;
 
-    public MainViewModel( @NonNull String sessionId,
+    public MainViewModel(@NonNull String sessionId,
                          @NonNull SessionTracker<Session, Session.Event, Session.State> sessionTracker) {
         this.sessionId = sessionId;
         this.sessionTracker = sessionTracker;
     }
 
-    public void onLogOutButtonClicked() {
+    void onLogOutButtonClicked() {
         state.onNext(State.Progress.INSTANCE);
 
         disposable = Completable.fromAction(() -> sessionTracker.consumeEvent(sessionId, Session.Event.LOGOUT))
@@ -47,7 +44,7 @@ public class MainViewModel extends ViewModel {
                 .subscribe(() -> state.onNext(State.Success.INSTANCE));
     }
 
-    public void onLogOutAndForgetButtonClicked() {
+    void onLogOutAndForgetButtonClicked() {
         state.onNext(State.Progress.INSTANCE);
 
         disposable = Completable.fromAction(() -> sessionTracker.consumeEvent(sessionId, Session.Event.LOGOUT_AND_FORGET))
@@ -57,7 +54,7 @@ public class MainViewModel extends ViewModel {
                 .subscribe(() -> state.onNext(State.Success.INSTANCE));
     }
 
-    public Observable<State> observeState() {
+    Observable<State> observeState() {
         return state.hide();
     }
 
@@ -74,22 +71,22 @@ public class MainViewModel extends ViewModel {
         private State() {
         }
 
-        public static class Idle extends State {
-            public static final Idle INSTANCE = new Idle();
+        static class Idle extends State {
+            static final Idle INSTANCE = new Idle();
 
             private Idle() {
             }
         }
 
-        public static class Progress extends State {
-            public static final Progress INSTANCE = new Progress();
+        static class Progress extends State {
+            static final Progress INSTANCE = new Progress();
 
             private Progress() {
             }
         }
 
-        public static class Success extends State {
-            public static final Success INSTANCE = new Success();
+        static class Success extends State {
+            static final Success INSTANCE = new Success();
 
             private Success() {
             }

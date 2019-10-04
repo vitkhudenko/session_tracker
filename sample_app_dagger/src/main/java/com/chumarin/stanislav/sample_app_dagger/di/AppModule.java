@@ -12,7 +12,6 @@ import java.util.HashSet;
 
 import javax.inject.Singleton;
 
-import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import vit.khudenko.android.sessiontracker.ISessionStateTransitionsSupplier;
@@ -22,11 +21,6 @@ import vit.khudenko.android.sessiontracker.Transition;
 
 @Module
 class AppModule {
-
-//    @Provides
-//    public App provideAppContext(@NonNull App app) {
-//        return app;
-//    }
 
     @Provides
     @Singleton

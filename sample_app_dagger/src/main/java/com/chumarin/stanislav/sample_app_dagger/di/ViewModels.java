@@ -31,7 +31,5 @@ public class ViewModels {
                 new ViewModelFactory(App.getInstance().getAppComponent().getSessionTrackerListener().getUserComponent(sessionId).vmCreators())
         )
                 .get(clazz);
-
-
     }
 }
