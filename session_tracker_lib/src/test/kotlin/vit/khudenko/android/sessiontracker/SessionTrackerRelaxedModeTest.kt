@@ -239,6 +239,44 @@ class SessionTrackerRelaxedModeTest {
     }
 
     @Test
+    fun `initialization happens only once, subsequent calls are ignored`() {
+        val session = Session("session_id")
+        val state = State.ACTIVE
+
+        val storage = createStorageMock(listOf(SessionRecord(session, state)))
+        val listener = mock<SessionTracker.Listener<Session, Event, State>>()
+
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
+            autoUntrackStates = emptySet(),
+            mode = mode,
+            logger = logger
+        )
+
+        sessionTracker.initialize()
+
+        with(inOrder(storage, listener)) {
+            verify(storage).readAllSessionRecords()
+            verify(listener).onSessionTrackingStarted(sessionTracker, session, state)
+        }
+        verifyNoMoreInteractions(listener, storage)
+        verifyZeroInteractions(logger)
+
+        assertEquals(listOf(SessionRecord(session, state)), sessionTracker.getSessions())
+
+        reset(storage, listener, logger)
+
+        sessionTracker.initialize()
+
+        verify(logger).w(SessionTracker.TAG, "initialize: already initialized, skipping..")
+        verifyZeroInteractions(listener, storage)
+
+        assertEquals(listOf(SessionRecord(session, state)), sessionTracker.getSessions())
+    }
+
+    @Test
     fun trackSession() {
         val storage = createStorageMock(emptyList())
         val listener = mock<SessionTracker.Listener<Session, Event, State>>()
@@ -343,6 +381,43 @@ class SessionTrackerRelaxedModeTest {
     }
 
     @Test
+    fun `trackSession() without state transitions fails on state machine's builder validation`() {
+        expectedExceptionRule.expect(RuntimeException::class.java)
+        expectedExceptionRule.expectMessage("SessionTracker failed to track session: error creating StateMachine")
+
+        val storage = createStorageMock(emptyList())
+
+        val listener = mock<SessionTracker.Listener<Session, Event, State>>()
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = mock {
+                on { getStateTransitions(any()) } doReturn emptyList() // incomplete config
+            },
+            autoUntrackStates = emptySet(),
+            mode = mode,
+            logger = logger
+        )
+
+        sessionTracker.initialize()
+        assertTrue(sessionTracker.getSessions().isEmpty())
+
+        val session = Session("session_id")
+        val state = State.ACTIVE
+
+        try {
+            sessionTracker.trackSession(session, state)
+        } catch (e: Exception) {
+            verify(storage).readAllSessionRecords()
+            verifyNoMoreInteractions(storage)
+            verifyZeroInteractions(listener)
+            assertTrue(sessionTracker.getSessions().isEmpty())
+
+            throw e
+        }
+    }
+
+    @Test
     fun untrackSession() {
         val session = Session("session_id")
         val state = State.ACTIVE
@@ -374,6 +449,38 @@ class SessionTrackerRelaxedModeTest {
         verifyNoMoreInteractions(storage, listener)
 
         assertTrue(sessionTracker.getSessions().isEmpty())
+    }
+
+    @Test
+    fun `untrackSession() for an unknown session should be ignored`() {
+        val session = Session("session_id")
+        val state = State.ACTIVE
+
+        val storage = createStorageMock(listOf(SessionRecord(session, state)))
+        val listener = mock<SessionTracker.Listener<Session, Event, State>>()
+
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
+            autoUntrackStates = emptySet(),
+            mode = mode,
+            logger = logger
+        )
+
+        val unknownSessionId = "unknown_session_id"
+
+        sessionTracker.initialize()
+
+        reset(storage, listener, logger)
+
+        sessionTracker.untrackSession(unknownSessionId)
+
+        verifyZeroInteractions(storage, listener)
+        verify(logger).d(SessionTracker.TAG, "untrackSession: no session with ID '$unknownSessionId' found")
+        verifyNoMoreInteractions(logger)
+
+        assertEquals(listOf(SessionRecord(session, state)), sessionTracker.getSessions())
     }
 
     @Test
@@ -584,12 +691,11 @@ class SessionTrackerRelaxedModeTest {
         val session2 = Session("session_id_2")
         val state2 = State.INACTIVE
 
-        val sessionTrackerRef = AtomicReference<SessionTracker<Session, Event, State>>()
-
         val storage = createStorageMock(listOf(SessionRecord(session1, state1), SessionRecord(session2, state2)))
         val listener = mock<SessionTracker.Listener<Session, Event, State>> {
             on { onSessionStateChanged(any(), eq(session1), eq(state1), eq(State.FORGOTTEN)) } doAnswer {
-                sessionTrackerRef.get().untrackSession(session1.sessionId)
+                val sessionTracker = it.getArgument<SessionTracker<Session, Event, State>>(0)
+                sessionTracker.untrackSession(session1.sessionId)
                 Unit
             }
         }
@@ -606,8 +712,6 @@ class SessionTrackerRelaxedModeTest {
             mode = mode,
             logger = logger
         )
-
-        sessionTrackerRef.set(sessionTracker)
 
         with(sessionTracker) {
             initialize()
@@ -641,12 +745,11 @@ class SessionTrackerRelaxedModeTest {
         val session2 = Session("session_id_2")
         val state2 = State.INACTIVE
 
-        val sessionTrackerRef = AtomicReference<SessionTracker<Session, Event, State>>()
-
         val storage = createStorageMock(listOf(SessionRecord(session1, state1), SessionRecord(session2, state2)))
         val listener = mock<SessionTracker.Listener<Session, Event, State>> {
             on { onSessionStateChanged(any(), eq(session1), eq(state1), eq(State.FORGOTTEN)) } doAnswer {
-                sessionTrackerRef.get().untrackAllSessions()
+                val sessionTracker = it.getArgument<SessionTracker<Session, Event, State>>(0)
+                sessionTracker.untrackAllSessions()
                 Unit
             }
         }
@@ -663,8 +766,6 @@ class SessionTrackerRelaxedModeTest {
             mode = mode,
             logger = logger
         )
-
-        sessionTrackerRef.set(sessionTracker)
 
         with(sessionTracker) {
             initialize()
@@ -687,6 +788,99 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener)
+
+        assertTrue(sessionTracker.getSessions().isEmpty())
+    }
+
+    @Test
+    fun `consumeEvent() for an unknown session should be ignored`() {
+        val session = Session("session_id")
+        val state = State.ACTIVE
+
+        val storage = createStorageMock(listOf(SessionRecord(session, state)))
+        val listener = mock<SessionTracker.Listener<Session, Event, State>>()
+
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = createSessionStateTransitionsSupplier(),
+            autoUntrackStates = emptySet(),
+            mode = mode,
+            logger = logger
+        )
+
+        val unknownSessionId = "unknown_session_id"
+
+        sessionTracker.initialize()
+
+        reset(storage, listener, logger)
+
+        assertFalse(sessionTracker.consumeEvent(unknownSessionId, Event.LOGIN))
+
+        verifyZeroInteractions(storage, listener)
+        verify(logger).w(SessionTracker.TAG, "consumeEvent: no session with ID '$unknownSessionId' found")
+        verifyNoMoreInteractions(logger)
+
+        assertEquals(listOf(SessionRecord(session, state)), sessionTracker.getSessions())
+    }
+
+    @Test
+    fun `consumeEvent() for the session being auto-untracked should be ignored`() {
+        val session = Session("session_id")
+        val state = State.ACTIVE
+
+        val storage = createStorageMock(listOf(SessionRecord(session, state)))
+        val listener = mock<SessionTracker.Listener<Session, Event, State>> {
+            on { onSessionStateChanged(any(), eq(session), eq(state), eq(State.INACTIVE)) } doAnswer {
+                val sessionTracker = it.getArgument<SessionTracker<Session, Event, State>>(0)
+                assertFalse(sessionTracker.consumeEvent(session.sessionId, Event.LOGIN))
+                Unit
+            }
+        }
+
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = mock {
+                on { getStateTransitions(any()) } doReturn listOf(
+                    Transition(
+                        Event.LOGOUT,
+                        listOf(State.ACTIVE, State.INACTIVE, State.FORGOTTEN)
+                    ),
+                    Transition(
+                        Event.LOGIN,
+                        listOf(State.ACTIVE, State.FORGOTTEN)
+                    )
+                )
+            },
+            autoUntrackStates = setOf(State.INACTIVE),
+            mode = mode,
+            logger = logger
+        )
+
+        sessionTracker.initialize()
+        assertEquals(listOf(SessionRecord(session, state)), sessionTracker.getSessions())
+
+        reset(storage, logger)
+
+        assertTrue(sessionTracker.consumeEvent(session.sessionId, Event.LOGOUT))
+
+        with(inOrder(listener, storage, logger)) {
+            verify(listener).onSessionTrackingStarted(sessionTracker, session, state)
+            verify(logger).d(
+                SessionTracker.TAG,
+                "onStateChanged: '$state' -> '${State.INACTIVE}', sessionId = '${session.sessionId}', going to auto-untrack session.."
+            )
+            verify(listener).onSessionStateChanged(sessionTracker, session, state, State.INACTIVE)
+            verify(logger).w(
+                SessionTracker.TAG,
+                "consumeEvent: event = '${Event.LOGIN}', session with ID '${session.sessionId}' is already untracking"
+            )
+            verify(storage).deleteSessionRecord(session.sessionId)
+            verify(listener).onSessionTrackingStopped(sessionTracker, session, State.INACTIVE)
+        }
+
+        verifyNoMoreInteractions(storage, listener, logger)
 
         assertTrue(sessionTracker.getSessions().isEmpty())
     }

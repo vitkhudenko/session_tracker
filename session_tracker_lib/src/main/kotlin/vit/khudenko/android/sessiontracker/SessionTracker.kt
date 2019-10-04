@@ -647,30 +647,28 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
         stateMachine.addListener(object : StateMachine.Listener<State> {
             override fun onStateChanged(oldState: State, newState: State) {
                 val baseLogMessage = "onStateChanged: '$oldState' -> '$newState', sessionId = '${session.sessionId}'"
+
                 val sessionInfo = sessionsMap[session.sessionId]
-                if (sessionInfo != null) {
-                    if (sessionInfo.isUntracking) {
-                        logger.w(TAG, "$baseLogMessage, session is untracking, so ignoring state change")
-                    } else {
-                        if (mode.verbose) {
-                            logger.d(TAG, baseLogMessage)
-                        }
-                        if (newState in autoUntrackStates) {
-                            logger.d(TAG, "$baseLogMessage, going to auto-untrack session..")
-                            val updatedSessionInfo = sessionInfo.copy(isUntracking = true)
-                            sessionsMap[session.sessionId] = updatedSessionInfo
-                            stateMachine.removeAllListeners()
-                            listener.onSessionStateChanged(this@SessionTracker, session, oldState, newState)
-                            if (sessionsMap.contains(session.sessionId)) {
-                                doUntrackSession(updatedSessionInfo)
-                            }
-                        } else {
-                            doPersistAction { sessionTrackerStorage.updateSessionRecord(sessionInfo.toSessionRecord()) }
-                            listener.onSessionStateChanged(this@SessionTracker, session, oldState, newState)
-                        }
+
+                checkNotNull(sessionInfo) { "$baseLogMessage - session not found" }
+                check(sessionInfo.isUntracking.not()) { "$baseLogMessage - session is untracking" }
+
+                if (mode.verbose) {
+                    logger.d(TAG, baseLogMessage)
+                }
+
+                if (newState in autoUntrackStates) {
+                    logger.d(TAG, "$baseLogMessage, going to auto-untrack session..")
+                    val updatedSessionInfo = sessionInfo.copy(isUntracking = true)
+                    sessionsMap[session.sessionId] = updatedSessionInfo
+                    stateMachine.removeAllListeners()
+                    listener.onSessionStateChanged(this@SessionTracker, session, oldState, newState)
+                    if (sessionsMap.contains(session.sessionId)) {
+                        doUntrackSession(updatedSessionInfo)
                     }
                 } else {
-                    logger.d(TAG, "$baseLogMessage, session not found")
+                    doPersistAction { sessionTrackerStorage.updateSessionRecord(sessionInfo.toSessionRecord()) }
+                    listener.onSessionStateChanged(this@SessionTracker, session, oldState, newState)
                 }
             }
         })
