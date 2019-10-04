@@ -1,1 +1,1 @@
-include ':sample_app_koin', ':session_tracker_lib'
+include ':sample_app_koin', ':session_tracker_lib', ':sample_app_dagger'

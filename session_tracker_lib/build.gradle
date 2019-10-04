@@ -106,6 +106,9 @@ publishing {
 }
 
 bintray {
+    if (!project.hasProperty('bintray.user')) {
+        return
+    }
     user = project.property('bintray.user')
     key = project.property('bintray.apiKey')
     publications = ['release']
