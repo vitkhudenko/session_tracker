@@ -125,21 +125,20 @@ the same `INACTIVE` state.
 
 `SessionTracker.Listener` has useful for your app callbacks that allow to manage session resources appropriately:
 
-- `onSessionTrackingStarted(sessionTracker: SessionTracker<Event, State>, sessionId: String, initState: State)`
+- `onSessionTrackingStarted(sessionTracker: SessionTracker<Event, State>, sessionRecord: SessionRecord<State>)`
 
     SessionTracker has added session to the list of tracked sessions.
     This happens as a result of calling `SessionTracker.trackSession(sessionId, state)` or `SessionTracker.initialize()`.
-    This callback is the right place to create any resources for the session (a DB connection, a DI scope, etc.)
-    depending on the initState.
+    This callback is the right place to create any resources for the session (a DB connection, a DI scope, etc.).
 
-- `onSessionStateChanged(sessionTracker: SessionTracker<Event, State>, sessionId: String, oldState: State, newState: State)`
+- `onSessionStateChanged(sessionTracker: SessionTracker<Event, State>, sessionRecord: SessionRecord<State>, oldState: State)`
 
     Session tracking state has changed.
     This happens as a result of calling `SessionTracker.consumeEvent(sessionId, event)`.
     This callback is the right place to create or release any resources for the session (a DB connection,
     a DI scope, etc.).
 
-- `onSessionTrackingStopped(sessionTracker: SessionTracker<Event, State>, sessionId: String, state: State)`
+- `onSessionTrackingStopped(sessionTracker: SessionTracker<Event, State>, sessionRecord: SessionRecord<State>)`
 
     SessionTracker has removed session from the list of tracked sessions. This happens as a result
     of calling `SessionTracker.untrackSession(sessionId)`.
@@ -147,9 +146,9 @@ the same `INACTIVE` state.
     the `autoUntrackStates` (a `SessionTracker` constructor parameter).
     This callback is the right place to release any resources for the session (a DB connection, a DI scope, etc.).
 
-- `onAllSessionsTrackingStopped(sessionTracker: SessionTracker<Event, State>, sessionsData: List<Pair<String, State>>)`
+- `onAllSessionsTrackingStopped(sessionTracker: SessionTracker<Event, State>, sessionRecords: List<SessionRecord<State>>)`
 
-    SessionTracker has removed session from the list of tracked sessions. This happens as a result
+    SessionTracker has removed all sessions from the list of tracked sessions. This happens as a result
     of calling `SessionTracker.untrackAllSessions()`.
     This callback is the right place to release any resources for the sessions (a DB connection, a DI scope, etc.).
 

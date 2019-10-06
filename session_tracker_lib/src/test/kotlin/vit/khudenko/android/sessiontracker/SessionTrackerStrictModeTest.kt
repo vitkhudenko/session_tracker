@@ -154,10 +154,9 @@ class SessionTrackerStrictModeTest {
 
     @Test
     fun initialization() {
-        val sessionId = "session_id"
-        val state = State.ACTIVE
+        val sessionRecord = SessionRecord("session_id", State.ACTIVE)
 
-        val storage = createStorageMock(listOf(SessionRecord(sessionId, state)))
+        val storage = createStorageMock(listOf(sessionRecord))
         val listener = mock<SessionTracker.Listener<Event, State>>()
 
         val sessionTracker = SessionTracker(
@@ -173,12 +172,12 @@ class SessionTrackerStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId, state)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
         }
 
         verifyNoMoreInteractions(listener, storage)
 
-        assertEquals(listOf(SessionRecord(sessionId, state)), sessionTracker.getSessionRecords())
+        assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
     }
 
     @Test
@@ -245,10 +244,9 @@ class SessionTrackerStrictModeTest {
 
     @Test
     fun `initialization happens only once, subsequent calls are ignored`() {
-        val sessionId = "session_id"
-        val state = State.ACTIVE
+        val sessionRecord = SessionRecord("session_id", State.ACTIVE)
 
-        val storage = createStorageMock(listOf(SessionRecord(sessionId, state)))
+        val storage = createStorageMock(listOf(sessionRecord))
         val listener = mock<SessionTracker.Listener<Event, State>>()
         val logger = mock<SessionTracker.Logger>()
 
@@ -265,12 +263,12 @@ class SessionTrackerStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId, state)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
         }
         verifyNoMoreInteractions(listener, storage)
         verifyZeroInteractions(logger)
 
-        assertEquals(listOf(SessionRecord(sessionId, state)), sessionTracker.getSessionRecords())
+        assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
 
         reset(storage, listener, logger)
 
@@ -279,7 +277,7 @@ class SessionTrackerStrictModeTest {
         verify(logger).w(SessionTracker.TAG, "initialize: already initialized, skipping..")
         verifyZeroInteractions(listener, storage)
 
-        assertEquals(listOf(SessionRecord(sessionId, state)), sessionTracker.getSessionRecords())
+        assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
     }
 
     @Test
@@ -299,20 +297,19 @@ class SessionTrackerStrictModeTest {
         sessionTracker.initialize()
         assertTrue(sessionTracker.getSessionRecords().isEmpty())
 
-        val sessionId = "session_id"
-        val state = State.ACTIVE
+        val sessionRecord = SessionRecord("session_id", State.ACTIVE)
 
-        sessionTracker.trackSession(sessionId, state)
+        sessionTracker.trackSession(sessionRecord.sessionId, sessionRecord.state)
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(storage).createSessionRecord(SessionRecord(sessionId, state))
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId, state)
+            verify(storage).createSessionRecord(sessionRecord)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
         }
 
         verifyNoMoreInteractions(storage, listener)
 
-        assertEquals(listOf(SessionRecord(sessionId, state)), sessionTracker.getSessionRecords())
+        assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
     }
 
     @Test
@@ -354,10 +351,9 @@ class SessionTrackerStrictModeTest {
 
     @Test
     fun `trackSession() with already tracked session`() {
-        val sessionId = "session_id"
-        val state = State.ACTIVE
+        val sessionRecord = SessionRecord("session_id", State.ACTIVE)
 
-        val storage = createStorageMock(listOf(SessionRecord(sessionId, state)))
+        val storage = createStorageMock(listOf(sessionRecord))
         val logger = mock<SessionTracker.Logger>()
         val listener = mock<SessionTracker.Listener<Event, State>>()
 
@@ -372,18 +368,21 @@ class SessionTrackerStrictModeTest {
 
         with(sessionTracker) {
             initialize()
-            trackSession(sessionId, State.INACTIVE)
+            trackSession(sessionRecord.sessionId, State.INACTIVE)
         }
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId, state)
-            verify(logger).w(SessionTracker.TAG, "trackSession: session with ID '${sessionId}' already exists")
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
+            verify(logger).w(
+                SessionTracker.TAG,
+                "trackSession: session with ID '${sessionRecord.sessionId}' already exists"
+            )
         }
 
         verifyNoMoreInteractions(storage, listener)
 
-        assertEquals(listOf(SessionRecord(sessionId, state)), sessionTracker.getSessionRecords())
+        assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
     }
 
     @Test
@@ -425,10 +424,9 @@ class SessionTrackerStrictModeTest {
 
     @Test
     fun untrackSession() {
-        val sessionId = "session_id"
-        val state = State.ACTIVE
+        val sessionRecord = SessionRecord("session_id", State.ACTIVE)
 
-        val storage = createStorageMock(listOf(SessionRecord(sessionId, state)))
+        val storage = createStorageMock(listOf(sessionRecord))
         val listener = mock<SessionTracker.Listener<Event, State>>()
 
         val sessionTracker = SessionTracker(
@@ -442,14 +440,14 @@ class SessionTrackerStrictModeTest {
 
         with(sessionTracker) {
             initialize()
-            untrackSession(sessionId)
+            untrackSession(sessionRecord.sessionId)
         }
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId, state)
-            verify(storage).deleteSessionRecord(sessionId)
-            verify(listener).onSessionTrackingStopped(sessionTracker, sessionId, state)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
+            verify(storage).deleteSessionRecord(sessionRecord.sessionId)
+            verify(listener).onSessionTrackingStopped(sessionTracker, sessionRecord)
         }
 
         verifyNoMoreInteractions(storage, listener)
@@ -459,10 +457,9 @@ class SessionTrackerStrictModeTest {
 
     @Test
     fun `untrackSession() for an unknown session should be ignored`() {
-        val sessionId = "session_id"
-        val state = State.ACTIVE
+        val sessionRecord = SessionRecord("session_id", State.ACTIVE)
 
-        val storage = createStorageMock(listOf(SessionRecord(sessionId, state)))
+        val storage = createStorageMock(listOf(sessionRecord))
         val listener = mock<SessionTracker.Listener<Event, State>>()
         val logger = mock<SessionTracker.Logger>()
 
@@ -487,18 +484,15 @@ class SessionTrackerStrictModeTest {
         verify(logger).d(SessionTracker.TAG, "untrackSession: no session with ID '$unknownSessionId' found")
         verifyNoMoreInteractions(logger)
 
-        assertEquals(listOf(SessionRecord(sessionId, state)), sessionTracker.getSessionRecords())
+        assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
     }
 
     @Test
     fun untrackAllSessions() {
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
 
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
-
-        val storage = createStorageMock(listOf(SessionRecord(sessionId1, state1), SessionRecord(sessionId2, state2)))
+        val storage = createStorageMock(listOf(sessionRecord1, sessionRecord2))
         val listener = mock<SessionTracker.Listener<Event, State>>()
 
         val sessionTracker = SessionTracker(
@@ -517,13 +511,10 @@ class SessionTrackerStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
             verify(storage).deleteAllSessionRecords()
-            verify(listener).onAllSessionsTrackingStopped(
-                sessionTracker,
-                listOf(sessionId1 to state1, sessionId2 to state2)
-            )
+            verify(listener).onAllSessionsTrackingStopped(sessionTracker, listOf(sessionRecord1, sessionRecord2))
         }
 
         verifyNoMoreInteractions(storage, listener)
@@ -533,13 +524,10 @@ class SessionTrackerStrictModeTest {
 
     @Test
     fun consumeEvent() {
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
 
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
-
-        val storage = createStorageMock(listOf(SessionRecord(sessionId1, state1), SessionRecord(sessionId2, state2)))
+        val storage = createStorageMock(listOf(sessionRecord1, sessionRecord2))
         val listener = mock<SessionTracker.Listener<Event, State>>()
 
         val sessionTracker = SessionTracker(
@@ -553,34 +541,29 @@ class SessionTrackerStrictModeTest {
 
         with(sessionTracker) {
             initialize()
-            assertTrue(consumeEvent(sessionId1, Event.LOGOUT))
+            assertTrue(consumeEvent(sessionRecord1.sessionId, Event.LOGOUT))
         }
+
+        val updatedSessionRecord1 = sessionRecord1.copy(state = State.INACTIVE)
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
-            verify(storage).updateSessionRecord(SessionRecord(sessionId1, State.INACTIVE))
-            verify(listener).onSessionStateChanged(sessionTracker, sessionId1, state1, State.INACTIVE)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(storage).updateSessionRecord(updatedSessionRecord1)
+            verify(listener).onSessionStateChanged(sessionTracker, updatedSessionRecord1, sessionRecord1.state)
         }
 
         verifyNoMoreInteractions(storage, listener)
 
-        assertEquals(
-            listOf(
-                SessionRecord(sessionId1, State.INACTIVE),
-                SessionRecord(sessionId2, state2)
-            ),
-            sessionTracker.getSessionRecords()
-        )
+        assertEquals(listOf(updatedSessionRecord1, sessionRecord2), sessionTracker.getSessionRecords())
     }
 
     @Test
     fun `if event is ignored then listeners should not be notified and sessions state should not be persisted`() {
-        val sessionId = "session_id_1"
-        val state = State.ACTIVE
+        val sessionRecord = SessionRecord("session_id_1", State.ACTIVE)
 
-        val storage = createStorageMock(listOf(SessionRecord(sessionId, state)))
+        val storage = createStorageMock(listOf(sessionRecord))
         val listener = mock<SessionTracker.Listener<Event, State>>()
 
         val sessionTracker = SessionTracker(
@@ -595,28 +578,25 @@ class SessionTrackerStrictModeTest {
         with(sessionTracker) {
             initialize()
             // LOGIN event will be ignored, since current state is ACTIVE
-            assertFalse(consumeEvent(sessionId, Event.LOGIN))
+            assertFalse(consumeEvent(sessionRecord.sessionId, Event.LOGIN))
         }
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId, state)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
         }
 
         verifyNoMoreInteractions(storage, listener)
 
-        assertEquals(listOf(SessionRecord(sessionId, state)), sessionTracker.getSessionRecords())
+        assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
     }
 
     @Test
     fun `consumeEvent() called and session appears in a auto-untrack state`() {
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
 
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
-
-        val storage = createStorageMock(listOf(SessionRecord(sessionId1, state1), SessionRecord(sessionId2, state2)))
+        val storage = createStorageMock(listOf(sessionRecord1, sessionRecord2))
         val listener = mock<SessionTracker.Listener<Event, State>>()
 
         val sessionTracker = SessionTracker(
@@ -630,32 +610,31 @@ class SessionTrackerStrictModeTest {
 
         with(sessionTracker) {
             initialize()
-            assertTrue(consumeEvent(sessionId1, Event.LOGOUT_AND_FORGET))
+            assertTrue(consumeEvent(sessionRecord1.sessionId, Event.LOGOUT_AND_FORGET))
         }
+
+        val updatedSessionRecord1 = sessionRecord1.copy(state = State.FORGOTTEN)
 
         with(inOrder(listener, storage)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
-            verify(listener).onSessionStateChanged(sessionTracker, sessionId1, state1, State.FORGOTTEN)
-            verify(storage).deleteSessionRecord(sessionId1)
-            verify(listener).onSessionTrackingStopped(sessionTracker, sessionId1, State.FORGOTTEN)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionStateChanged(sessionTracker, updatedSessionRecord1, sessionRecord1.state)
+            verify(storage).deleteSessionRecord(sessionRecord1.sessionId)
+            verify(listener).onSessionTrackingStopped(sessionTracker, updatedSessionRecord1)
         }
 
         verifyNoMoreInteractions(storage, listener)
 
-        assertEquals(listOf(SessionRecord(sessionId2, state2)), sessionTracker.getSessionRecords())
+        assertEquals(listOf(sessionRecord2), sessionTracker.getSessionRecords())
     }
 
     @Test
     fun `consumeEvent() called and session appears in a auto-untrack state being an intermediate state in transition`() {
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
 
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
-
-        val storage = createStorageMock(listOf(SessionRecord(sessionId1, state1), SessionRecord(sessionId2, state2)))
+        val storage = createStorageMock(listOf(sessionRecord1, sessionRecord2))
         val listener = mock<SessionTracker.Listener<Event, State>>()
 
         val sessionTracker = SessionTracker(
@@ -673,36 +652,37 @@ class SessionTrackerStrictModeTest {
 
         with(sessionTracker) {
             initialize()
-            assertTrue(consumeEvent(sessionId1, Event.LOGOUT))
+            assertTrue(consumeEvent(sessionRecord1.sessionId, Event.LOGOUT))
         }
+
+        val updatedSessionRecord1 = sessionRecord1.copy(state = State.FORGOTTEN)
 
         with(inOrder(listener, storage)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
-            verify(listener).onSessionStateChanged(sessionTracker, sessionId1, state1, State.FORGOTTEN)
-            verify(storage).deleteSessionRecord(sessionId1)
-            verify(listener).onSessionTrackingStopped(sessionTracker, sessionId1, State.FORGOTTEN)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionStateChanged(sessionTracker, updatedSessionRecord1, sessionRecord1.state)
+            verify(storage).deleteSessionRecord(sessionRecord1.sessionId)
+            verify(listener).onSessionTrackingStopped(sessionTracker, updatedSessionRecord1)
         }
 
         verifyNoMoreInteractions(storage, listener)
 
-        assertEquals(listOf(SessionRecord(sessionId2, state2)), sessionTracker.getSessionRecords())
+        assertEquals(listOf(sessionRecord2), sessionTracker.getSessionRecords())
     }
 
     @Test
     fun `consumeEvent() called and session appears in a auto-untrack state being an intermediate state in transition, and listener calls untrackSession()`() {
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
 
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
+        val updatedSessionRecord1 = sessionRecord1.copy(state = State.FORGOTTEN)
 
-        val storage = createStorageMock(listOf(SessionRecord(sessionId1, state1), SessionRecord(sessionId2, state2)))
+        val storage = createStorageMock(listOf(sessionRecord1, sessionRecord2))
         val listener = mock<SessionTracker.Listener<Event, State>> {
-            on { onSessionStateChanged(any(), eq(sessionId1), eq(state1), eq(State.FORGOTTEN)) } doAnswer {
+            on { onSessionStateChanged(any(), eq(updatedSessionRecord1), eq(sessionRecord1.state)) } doAnswer {
                 val sessionTracker = it.getArgument<SessionTracker<Event, State>>(0)
-                sessionTracker.untrackSession(sessionId1)
+                sessionTracker.untrackSession(sessionRecord1.sessionId)
                 Unit
             }
         }
@@ -723,39 +703,38 @@ class SessionTrackerStrictModeTest {
 
         with(sessionTracker) {
             initialize()
-            assertTrue(consumeEvent(sessionId1, Event.LOGOUT))
+            assertTrue(consumeEvent(sessionRecord1.sessionId, Event.LOGOUT))
         }
 
         with(inOrder(listener, storage)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
-            verify(listener).onSessionStateChanged(sessionTracker, sessionId1, state1, State.FORGOTTEN)
-            verify(storage).deleteSessionRecord(sessionId1)
-            verify(listener).onSessionTrackingStopped(sessionTracker, sessionId1, State.FORGOTTEN)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionStateChanged(sessionTracker, updatedSessionRecord1, sessionRecord1.state)
+            verify(storage).deleteSessionRecord(sessionRecord1.sessionId)
+            verify(listener).onSessionTrackingStopped(sessionTracker, updatedSessionRecord1)
         }
 
         verifyNoMoreInteractions(storage, listener)
 
         verify(logger).w(
             SessionTracker.TAG,
-            "untrackSession: session with ID '${sessionId1}' is already untracking"
+            "untrackSession: session with ID '${sessionRecord1.sessionId}' is already untracking"
         )
 
-        assertEquals(listOf(SessionRecord(sessionId2, state2)), sessionTracker.getSessionRecords())
+        assertEquals(listOf(sessionRecord2), sessionTracker.getSessionRecords())
     }
 
     @Test
     fun `consumeEvent() called and session appears in a auto-untrack state being an intermediate state in transition, and listener calls untrackAllSessions()()`() {
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
 
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
+        val updatedSessionRecord1 = sessionRecord1.copy(state = State.FORGOTTEN)
 
-        val storage = createStorageMock(listOf(SessionRecord(sessionId1, state1), SessionRecord(sessionId2, state2)))
+        val storage = createStorageMock(listOf(sessionRecord1, sessionRecord2))
         val listener = mock<SessionTracker.Listener<Event, State>> {
-            on { onSessionStateChanged(any(), eq(sessionId1), eq(state1), eq(State.FORGOTTEN)) } doAnswer {
+            on { onSessionStateChanged(any(), eq(updatedSessionRecord1), eq(sessionRecord1.state)) } doAnswer {
                 val sessionTracker = it.getArgument<SessionTracker<Event, State>>(0)
                 sessionTracker.untrackAllSessions()
                 Unit
@@ -777,21 +756,18 @@ class SessionTrackerStrictModeTest {
 
         with(sessionTracker) {
             initialize()
-            assertTrue(consumeEvent(sessionId1, Event.LOGOUT))
+            assertTrue(consumeEvent(sessionRecord1.sessionId, Event.LOGOUT))
         }
 
         with(inOrder(listener, storage)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
-            verify(listener).onSessionStateChanged(sessionTracker, sessionId1, state1, State.FORGOTTEN)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionStateChanged(sessionTracker, updatedSessionRecord1, sessionRecord1.state)
             verify(storage).deleteAllSessionRecords()
             verify(listener).onAllSessionsTrackingStopped(
                 sessionTracker,
-                listOf(
-                    sessionId1 to State.FORGOTTEN,
-                    sessionId2 to state2
-                )
+                listOf(updatedSessionRecord1, sessionRecord2)
             )
         }
 
@@ -802,10 +778,8 @@ class SessionTrackerStrictModeTest {
 
     @Test
     fun `consumeEvent() for an unknown session should be ignored`() {
-        val sessionId = "session_id"
-        val state = State.ACTIVE
-
-        val storage = createStorageMock(listOf(SessionRecord(sessionId, state)))
+        val sessionRecord = SessionRecord("session_id", State.ACTIVE)
+        val storage = createStorageMock(listOf(sessionRecord))
         val listener = mock<SessionTracker.Listener<Event, State>>()
         val logger = mock<SessionTracker.Logger>()
 
@@ -830,19 +804,19 @@ class SessionTrackerStrictModeTest {
         verify(logger).w(SessionTracker.TAG, "consumeEvent: no session with ID '$unknownSessionId' found")
         verifyNoMoreInteractions(logger)
 
-        assertEquals(listOf(SessionRecord(sessionId, state)), sessionTracker.getSessionRecords())
+        assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
     }
 
     @Test
     fun `consumeEvent() for the session being auto-untracked should be ignored`() {
-        val sessionId = "session_id"
-        val state = State.ACTIVE
+        val sessionRecord = SessionRecord("session_id", State.ACTIVE)
+        val updatedSessionRecord = sessionRecord.copy(state = State.INACTIVE)
 
-        val storage = createStorageMock(listOf(SessionRecord(sessionId, state)))
+        val storage = createStorageMock(listOf(sessionRecord))
         val listener = mock<SessionTracker.Listener<Event, State>> {
-            on { onSessionStateChanged(any(), eq(sessionId), eq(state), eq(State.INACTIVE)) } doAnswer {
+            on { onSessionStateChanged(any(), eq(updatedSessionRecord), eq(sessionRecord.state)) } doAnswer {
                 val sessionTracker = it.getArgument<SessionTracker<Event, State>>(0)
-                assertFalse(sessionTracker.consumeEvent(sessionId, Event.LOGIN))
+                assertFalse(sessionTracker.consumeEvent(sessionRecord.sessionId, Event.LOGIN))
                 Unit
             }
         }
@@ -869,25 +843,25 @@ class SessionTrackerStrictModeTest {
         )
 
         sessionTracker.initialize()
-        assertEquals(listOf(SessionRecord(sessionId, state)), sessionTracker.getSessionRecords())
+        assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
 
         reset(storage, logger)
 
-        assertTrue(sessionTracker.consumeEvent(sessionId, Event.LOGOUT))
+        assertTrue(sessionTracker.consumeEvent(sessionRecord.sessionId, Event.LOGOUT))
 
         with(inOrder(listener, storage, logger)) {
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionId, state)
+            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
             verify(logger).d(
                 SessionTracker.TAG,
-                "onStateChanged: '$state' -> '${State.INACTIVE}', sessionId = '${sessionId}', going to auto-untrack session.."
+                "onStateChanged: '${sessionRecord.state}' -> '${State.INACTIVE}', sessionId = '${sessionRecord.sessionId}', going to auto-untrack session.."
             )
-            verify(listener).onSessionStateChanged(sessionTracker, sessionId, state, State.INACTIVE)
+            verify(listener).onSessionStateChanged(sessionTracker, updatedSessionRecord, sessionRecord.state)
             verify(logger).w(
                 SessionTracker.TAG,
-                "consumeEvent: event = '${Event.LOGIN}', session with ID '${sessionId}' is already untracking"
+                "consumeEvent: event = '${Event.LOGIN}', session with ID '${sessionRecord.sessionId}' is already untracking"
             )
-            verify(storage).deleteSessionRecord(sessionId)
-            verify(listener).onSessionTrackingStopped(sessionTracker, sessionId, State.INACTIVE)
+            verify(storage).deleteSessionRecord(sessionRecord.sessionId)
+            verify(listener).onSessionTrackingStopped(sessionTracker, updatedSessionRecord)
         }
 
         verifyNoMoreInteractions(storage, listener, logger)
@@ -905,23 +879,19 @@ class SessionTrackerStrictModeTest {
                     "accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
         )
 
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
-
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
-
         val sessionTrackerRef = AtomicReference<SessionTracker<Event, State>>()
+
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
+
+        val updatedSessionRecord1 = sessionRecord1.copy(state = State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn Collections.unmodifiableList(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                )
+                listOf(sessionRecord1, sessionRecord2)
             )
-            on { updateSessionRecord(SessionRecord(sessionId1, State.INACTIVE)) } doAnswer {
-                sessionTrackerRef.get().consumeEvent(sessionId2, Event.LOGIN)
+            on { updateSessionRecord(updatedSessionRecord1) } doAnswer {
+                sessionTrackerRef.get().consumeEvent(sessionRecord2.sessionId, Event.LOGIN)
                 Unit
             }
         }
@@ -942,24 +912,18 @@ class SessionTrackerStrictModeTest {
         sessionTracker.initialize()
 
         try {
-            sessionTracker.consumeEvent(sessionId1, Event.LOGOUT)
+            sessionTracker.consumeEvent(sessionRecord1.sessionId, Event.LOGOUT)
         } catch (e: Exception) {
             with(inOrder(storage, listener)) {
                 verify(storage).readAllSessionRecords()
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
-                verify(storage).updateSessionRecord(SessionRecord(sessionId1, State.INACTIVE))
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+                verify(storage).updateSessionRecord(updatedSessionRecord1)
             }
 
             verifyNoMoreInteractions(storage, listener)
 
-            assertEquals(
-                listOf(
-                    SessionRecord(sessionId1, State.INACTIVE),
-                    SessionRecord(sessionId2, state2)
-                ),
-                sessionTracker.getSessionRecords()
-            )
+            assertEquals(listOf(updatedSessionRecord1, sessionRecord2), sessionTracker.getSessionRecords())
 
             throw e
         }
@@ -973,16 +937,16 @@ class SessionTrackerStrictModeTest {
                     "accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
         )
 
-        val sessionId = "session_id_1"
-        val state = State.ACTIVE
-
         val sessionTrackerRef = AtomicReference<SessionTracker<Event, State>>()
+
+        val sessionRecord = SessionRecord("session_id_1", State.ACTIVE)
+        val updatedSessionRecord = sessionRecord.copy(state = State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn Collections.unmodifiableList(
-                listOf(SessionRecord(sessionId, state))
+                listOf(sessionRecord)
             )
-            on { updateSessionRecord(SessionRecord(sessionId, State.INACTIVE)) } doAnswer {
+            on { updateSessionRecord(updatedSessionRecord) } doAnswer {
                 sessionTrackerRef.get().trackSession("session_id_2", State.INACTIVE)
                 Unit
             }
@@ -1004,17 +968,17 @@ class SessionTrackerStrictModeTest {
         sessionTracker.initialize()
 
         try {
-            sessionTracker.consumeEvent(sessionId, Event.LOGOUT)
+            sessionTracker.consumeEvent(sessionRecord.sessionId, Event.LOGOUT)
         } catch (e: Exception) {
             with(inOrder(storage, listener)) {
                 verify(storage).readAllSessionRecords()
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId, state)
-                verify(storage).updateSessionRecord(SessionRecord(sessionId, State.INACTIVE))
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
+                verify(storage).updateSessionRecord(updatedSessionRecord)
             }
 
             verifyNoMoreInteractions(storage, listener)
 
-            assertEquals(listOf(SessionRecord(sessionId, State.INACTIVE)), sessionTracker.getSessionRecords())
+            assertEquals(listOf(updatedSessionRecord), sessionTracker.getSessionRecords())
 
             throw e
         }
@@ -1028,17 +992,17 @@ class SessionTrackerStrictModeTest {
                     "accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
         )
 
-        val sessionId = "session_id"
-        val state = State.ACTIVE
-
         val sessionTrackerRef = AtomicReference<SessionTracker<Event, State>>()
+
+        val sessionRecord = SessionRecord("session_id", State.ACTIVE)
+        val updatedSessionRecord = sessionRecord.copy(state = State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn Collections.unmodifiableList(
-                listOf(SessionRecord(sessionId, state))
+                listOf(sessionRecord)
             )
-            on { updateSessionRecord(SessionRecord(sessionId, State.INACTIVE)) } doAnswer {
-                sessionTrackerRef.get().untrackSession(sessionId)
+            on { updateSessionRecord(updatedSessionRecord) } doAnswer {
+                sessionTrackerRef.get().untrackSession(sessionRecord.sessionId)
                 Unit
             }
         }
@@ -1059,17 +1023,17 @@ class SessionTrackerStrictModeTest {
         sessionTracker.initialize()
 
         try {
-            sessionTracker.consumeEvent(sessionId, Event.LOGOUT)
+            sessionTracker.consumeEvent(sessionRecord.sessionId, Event.LOGOUT)
         } catch (e: Exception) {
             with(inOrder(storage, listener)) {
                 verify(storage).readAllSessionRecords()
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId, state)
-                verify(storage).updateSessionRecord(SessionRecord(sessionId, State.INACTIVE))
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
+                verify(storage).updateSessionRecord(updatedSessionRecord)
             }
 
             verifyNoMoreInteractions(storage, listener)
 
-            assertEquals(listOf(SessionRecord(sessionId, State.INACTIVE)), sessionTracker.getSessionRecords())
+            assertEquals(listOf(updatedSessionRecord), sessionTracker.getSessionRecords())
 
             throw e
         }
@@ -1083,22 +1047,17 @@ class SessionTrackerStrictModeTest {
                     "accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
         )
 
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
-
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
-
         val sessionTrackerRef = AtomicReference<SessionTracker<Event, State>>()
+
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
+        val updatedSessionRecord1 = sessionRecord1.copy(state = State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn Collections.unmodifiableList(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                )
+                listOf(sessionRecord1, sessionRecord2)
             )
-            on { updateSessionRecord(SessionRecord(sessionId1, State.INACTIVE)) } doAnswer {
+            on { updateSessionRecord(updatedSessionRecord1) } doAnswer {
                 sessionTrackerRef.get().untrackAllSessions()
                 Unit
             }
@@ -1120,24 +1079,18 @@ class SessionTrackerStrictModeTest {
         sessionTracker.initialize()
 
         try {
-            sessionTracker.consumeEvent(sessionId1, Event.LOGOUT)
+            sessionTracker.consumeEvent(sessionRecord1.sessionId, Event.LOGOUT)
         } catch (e: Exception) {
             with(inOrder(storage, listener)) {
                 verify(storage).readAllSessionRecords()
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
-                verify(storage).updateSessionRecord(SessionRecord(sessionId1, State.INACTIVE))
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+                verify(storage).updateSessionRecord(updatedSessionRecord1)
             }
 
             verifyNoMoreInteractions(storage, listener)
 
-            assertEquals(
-                listOf(
-                    SessionRecord(sessionId1, State.INACTIVE),
-                    SessionRecord(sessionId2, state2)
-                ),
-                sessionTracker.getSessionRecords()
-            )
+            assertEquals(listOf(updatedSessionRecord1, sessionRecord2), sessionTracker.getSessionRecords())
 
             throw  e
         }
@@ -1359,23 +1312,17 @@ class SessionTrackerStrictModeTest {
                     "accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
         )
 
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
-
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
-
         val sessionTrackerRef = AtomicReference<SessionTracker<Event, State>>()
+
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn Collections.unmodifiableList(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                )
+                listOf(sessionRecord1, sessionRecord2)
             )
-            on { deleteSessionRecord(sessionId1) } doAnswer {
-                sessionTrackerRef.get().consumeEvent(sessionId2, Event.LOGIN)
+            on { deleteSessionRecord(sessionRecord1.sessionId) } doAnswer {
+                sessionTrackerRef.get().consumeEvent(sessionRecord2.sessionId, Event.LOGIN)
                 Unit
             }
         }
@@ -1395,24 +1342,18 @@ class SessionTrackerStrictModeTest {
         sessionTracker.initialize()
 
         try {
-            sessionTracker.untrackSession(sessionId1)
+            sessionTracker.untrackSession(sessionRecord1.sessionId)
         } catch (e: Exception) {
             with(inOrder(storage, listener)) {
                 verify(storage).readAllSessionRecords()
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
-                verify(storage).deleteSessionRecord(sessionId1)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+                verify(storage).deleteSessionRecord(sessionRecord1.sessionId)
             }
 
             verifyNoMoreInteractions(storage, listener)
 
-            assertEquals(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                ),
-                sessionTracker.getSessionRecords()
-            )
+            assertEquals(listOf(sessionRecord1, sessionRecord2), sessionTracker.getSessionRecords())
 
             throw e
         }
@@ -1426,16 +1367,15 @@ class SessionTrackerStrictModeTest {
                     "accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
         )
 
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
-
         val sessionTrackerRef = AtomicReference<SessionTracker<Event, State>>()
+
+        val sessionRecord = SessionRecord("session_id_1", State.ACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn Collections.unmodifiableList(
-                listOf(SessionRecord(sessionId1, state1))
+                listOf(sessionRecord)
             )
-            on { deleteSessionRecord(sessionId1) } doAnswer {
+            on { deleteSessionRecord(sessionRecord.sessionId) } doAnswer {
                 sessionTrackerRef.get().trackSession("session_id_2", State.INACTIVE)
                 Unit
             }
@@ -1456,17 +1396,17 @@ class SessionTrackerStrictModeTest {
         sessionTracker.initialize()
 
         try {
-            sessionTracker.untrackSession(sessionId1)
+            sessionTracker.untrackSession(sessionRecord.sessionId)
         } catch (e: Exception) {
             with(inOrder(storage, listener)) {
                 verify(storage).readAllSessionRecords()
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-                verify(storage).deleteSessionRecord(sessionId1)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
+                verify(storage).deleteSessionRecord(sessionRecord.sessionId)
             }
 
             verifyNoMoreInteractions(storage, listener)
 
-            assertEquals(listOf(SessionRecord(sessionId1, state1)), sessionTracker.getSessionRecords())
+            assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
 
             throw e
         }
@@ -1480,23 +1420,17 @@ class SessionTrackerStrictModeTest {
                     "accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
         )
 
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
-
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
-
         val sessionTrackerRef = AtomicReference<SessionTracker<Event, State>>()
+
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn Collections.unmodifiableList(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                )
+                listOf(sessionRecord1, sessionRecord2)
             )
-            on { deleteSessionRecord(sessionId1) } doAnswer {
-                sessionTrackerRef.get().untrackSession(sessionId2)
+            on { deleteSessionRecord(sessionRecord1.sessionId) } doAnswer {
+                sessionTrackerRef.get().untrackSession(sessionRecord2.sessionId)
                 Unit
             }
         }
@@ -1516,24 +1450,18 @@ class SessionTrackerStrictModeTest {
         sessionTracker.initialize()
 
         try {
-            sessionTracker.untrackSession(sessionId1)
+            sessionTracker.untrackSession(sessionRecord1.sessionId)
         } catch (e: Exception) {
             with(inOrder(storage, listener)) {
                 verify(storage).readAllSessionRecords()
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
-                verify(storage).deleteSessionRecord(sessionId1)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+                verify(storage).deleteSessionRecord(sessionRecord1.sessionId)
             }
 
             verifyNoMoreInteractions(storage, listener)
 
-            assertEquals(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                ),
-                sessionTracker.getSessionRecords()
-            )
+            assertEquals(listOf(sessionRecord1, sessionRecord2), sessionTracker.getSessionRecords())
 
             throw e
         }
@@ -1547,22 +1475,16 @@ class SessionTrackerStrictModeTest {
                     "accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
         )
 
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
-
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
-
         val sessionTrackerRef = AtomicReference<SessionTracker<Event, State>>()
+
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn Collections.unmodifiableList(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                )
+                listOf(sessionRecord1, sessionRecord2)
             )
-            on { deleteSessionRecord(sessionId1) } doAnswer {
+            on { deleteSessionRecord(sessionRecord1.sessionId) } doAnswer {
                 sessionTrackerRef.get().untrackAllSessions()
                 Unit
             }
@@ -1583,24 +1505,18 @@ class SessionTrackerStrictModeTest {
         sessionTracker.initialize()
 
         try {
-            sessionTracker.untrackSession(sessionId1)
+            sessionTracker.untrackSession(sessionRecord1.sessionId)
         } catch (e: Exception) {
             with(inOrder(storage, listener)) {
                 verify(storage).readAllSessionRecords()
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
-                verify(storage).deleteSessionRecord(sessionId1)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+                verify(storage).deleteSessionRecord(sessionRecord1.sessionId)
             }
 
             verifyNoMoreInteractions(storage, listener)
 
-            assertEquals(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                ),
-                sessionTracker.getSessionRecords()
-            )
+            assertEquals(listOf(sessionRecord1, sessionRecord2), sessionTracker.getSessionRecords())
 
             throw e
         }
@@ -1614,23 +1530,17 @@ class SessionTrackerStrictModeTest {
                     "accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
         )
 
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
-
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
-
         val sessionTrackerRef = AtomicReference<SessionTracker<Event, State>>()
+
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn Collections.unmodifiableList(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                )
+                listOf(sessionRecord1, sessionRecord2)
             )
             on { deleteAllSessionRecords() } doAnswer {
-                sessionTrackerRef.get().consumeEvent(sessionId1, Event.LOGOUT)
+                sessionTrackerRef.get().consumeEvent(sessionRecord1.sessionId, Event.LOGOUT)
                 Unit
             }
         }
@@ -1655,20 +1565,14 @@ class SessionTrackerStrictModeTest {
         } catch (e: Exception) {
             with(inOrder(storage, listener)) {
                 verify(storage).readAllSessionRecords()
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
                 verify(storage).deleteAllSessionRecords()
             }
 
             verifyNoMoreInteractions(storage, listener)
 
-            assertEquals(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                ),
-                sessionTracker.getSessionRecords()
-            )
+            assertEquals(listOf(sessionRecord1, sessionRecord2), sessionTracker.getSessionRecords())
 
             throw e
         }
@@ -1682,20 +1586,14 @@ class SessionTrackerStrictModeTest {
                     "accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
         )
 
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
-
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
-
         val sessionTrackerRef = AtomicReference<SessionTracker<Event, State>>()
+
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn Collections.unmodifiableList(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                )
+                listOf(sessionRecord1, sessionRecord2)
             )
             on { deleteAllSessionRecords() } doAnswer {
                 sessionTrackerRef.get().trackSession("session_id_3", State.ACTIVE)
@@ -1723,20 +1621,14 @@ class SessionTrackerStrictModeTest {
         } catch (e: Exception) {
             with(inOrder(storage, listener)) {
                 verify(storage).readAllSessionRecords()
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
                 verify(storage).deleteAllSessionRecords()
             }
 
             verifyNoMoreInteractions(storage, listener)
 
-            assertEquals(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                ),
-                sessionTracker.getSessionRecords()
-            )
+            assertEquals(listOf(sessionRecord1, sessionRecord2), sessionTracker.getSessionRecords())
 
             throw e
         }
@@ -1750,23 +1642,17 @@ class SessionTrackerStrictModeTest {
                     "accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
         )
 
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
-
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
-
         val sessionTrackerRef = AtomicReference<SessionTracker<Event, State>>()
+
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn Collections.unmodifiableList(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                )
+                listOf(sessionRecord1, sessionRecord2)
             )
             on { deleteAllSessionRecords() } doAnswer {
-                sessionTrackerRef.get().untrackSession(sessionId2)
+                sessionTrackerRef.get().untrackSession(sessionRecord2.sessionId)
                 Unit
             }
         }
@@ -1791,20 +1677,14 @@ class SessionTrackerStrictModeTest {
         } catch (e: Exception) {
             with(inOrder(storage, listener)) {
                 verify(storage).readAllSessionRecords()
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
                 verify(storage).deleteAllSessionRecords()
             }
 
             verifyNoMoreInteractions(storage, listener)
 
-            assertEquals(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                ),
-                sessionTracker.getSessionRecords()
-            )
+            assertEquals(listOf(sessionRecord1, sessionRecord2), sessionTracker.getSessionRecords())
 
             throw e
         }
@@ -1818,20 +1698,14 @@ class SessionTrackerStrictModeTest {
                     "accessing SessionTracker from ISessionTrackerStorage callbacks is not allowed"
         )
 
-        val sessionId1 = "session_id_1"
-        val state1 = State.ACTIVE
-
-        val sessionId2 = "session_id_2"
-        val state2 = State.INACTIVE
-
         val sessionTrackerRef = AtomicReference<SessionTracker<Event, State>>()
+
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn Collections.unmodifiableList(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                )
+                listOf(sessionRecord1, sessionRecord2)
             )
             on { deleteAllSessionRecords() } doAnswer {
                 sessionTrackerRef.get().untrackAllSessions()
@@ -1859,20 +1733,14 @@ class SessionTrackerStrictModeTest {
         } catch (e: Exception) {
             with(inOrder(storage, listener)) {
                 verify(storage).readAllSessionRecords()
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId1, state1)
-                verify(listener).onSessionTrackingStarted(sessionTracker, sessionId2, state2)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
+                verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
                 verify(storage).deleteAllSessionRecords()
             }
 
             verifyNoMoreInteractions(storage, listener)
 
-            assertEquals(
-                listOf(
-                    SessionRecord(sessionId1, state1),
-                    SessionRecord(sessionId2, state2)
-                ),
-                sessionTracker.getSessionRecords()
-            )
+            assertEquals(listOf(sessionRecord1, sessionRecord2), sessionTracker.getSessionRecords())
 
             throw e
         }

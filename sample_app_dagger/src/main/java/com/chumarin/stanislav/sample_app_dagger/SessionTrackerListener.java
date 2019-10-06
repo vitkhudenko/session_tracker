@@ -5,8 +5,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.chumarin.stanislav.sample_app_dagger.di.UserComponent;
 import com.chumarin.stanislav.sample_app_dagger.di.UserModule;
-import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
+import vit.khudenko.android.sessiontracker.SessionRecord;
 import vit.khudenko.android.sessiontracker.SessionTracker;
 
 import java.util.HashMap;
@@ -45,19 +45,21 @@ public class SessionTrackerListener implements SessionTracker.Listener<Session.E
 
     @Override
     public void onSessionTrackingStarted(@NotNull SessionTracker<Session.Event, Session.State> sessionTracker,
-                                         @NotNull String sessionId,
-                                         @NotNull Session.State initState) {
-        Log.d(TAG, "onSessionTrackingStarted: session ID = " + sessionId + ", initState = " + initState);
-        if (initState == Session.State.ACTIVE) {
+                                         @NotNull SessionRecord<Session.State> sessionRecord) {
+        String sessionId = sessionRecord.getSessionId();
+        Session.State state = sessionRecord.getState();
+        Log.d(TAG, "onSessionTrackingStarted: session ID = " + sessionId + ", state = " + state);
+        if (state == Session.State.ACTIVE) {
             createDaggerScope(sessionId);
         }
     }
 
     @Override
     public void onSessionStateChanged(@NotNull SessionTracker<Session.Event, Session.State> sessionTracker,
-                                      @NotNull String sessionId,
-                                      @NotNull Session.State oldState,
-                                      @NotNull Session.State newState) {
+                                      @NotNull SessionRecord<Session.State> sessionRecord,
+                                      @NotNull Session.State oldState) {
+        String sessionId = sessionRecord.getSessionId();
+        Session.State newState = sessionRecord.getState();
         Log.d(TAG, "onSessionStateChanged: session ID = " + sessionId + ", states = (" + oldState + " -> " + newState + ")");
         switch (newState) {
             case ACTIVE:
@@ -74,8 +76,9 @@ public class SessionTrackerListener implements SessionTracker.Listener<Session.E
 
     @Override
     public void onSessionTrackingStopped(@NotNull SessionTracker<Session.Event, Session.State> sessionTracker,
-                                         @NotNull String sessionId,
-                                         @NotNull Session.State state) {
+                                         @NotNull SessionRecord<Session.State> sessionRecord) {
+        String sessionId = sessionRecord.getSessionId();
+        Session.State state = sessionRecord.getState();
         Log.d(TAG, "onSessionTrackingStopped: session ID = " + sessionId + ", state = " + state);
         closeDaggerScope(sessionId);
     }
@@ -88,10 +91,10 @@ public class SessionTrackerListener implements SessionTracker.Listener<Session.E
     @Override
     public void onAllSessionsTrackingStopped(
             @NotNull SessionTracker<Session.Event, Session.State> sessionTracker,
-            @NotNull List<? extends Pair<String, ? extends Session.State>> sessionsData) {
+            @NotNull List<SessionRecord<Session.State>> sessionRecords) {
         Log.d(TAG, "onAllSessionsTrackingStopped");
-        for (Pair<String, ? extends Session.State> sessionAndState : sessionsData) {
-            closeDaggerScope(sessionAndState.getFirst());
+        for (SessionRecord<Session.State> sessionRecord : sessionRecords) {
+            closeDaggerScope(sessionRecord.getSessionId());
         }
     }
 }
