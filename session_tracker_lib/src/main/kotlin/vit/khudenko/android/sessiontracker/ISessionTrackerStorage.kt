@@ -9,7 +9,7 @@ package vit.khudenko.android.sessiontracker
  *
  * `SessionTracker` implementation guarantees that `ISessionTrackerStorage` methods are never called concurrently.
  */
-interface ISessionTrackerStorage<S : ISession, State : Enum<State>> {
+interface ISessionTrackerStorage<State : Enum<State>> {
 
     /**
      * This method is called by `SessionTracker` from within the
@@ -19,16 +19,16 @@ interface ISessionTrackerStorage<S : ISession, State : Enum<State>> {
      *
      * @param sessionRecord [`SessionRecord`][SessionRecord]
      */
-    fun createSessionRecord(sessionRecord: SessionRecord<S, State>)
+    fun createSessionRecord(sessionRecord: SessionRecord<State>)
 
     /**
      * This is called by `SessionTracker` from within the
      * [`SessionTracker.initialize()`][SessionTracker.initialize] call.
      *
-     * The implementation should read and create previously persisted (if any) list of [`ISession`][ISession]
+     * The implementation should read and create previously persisted (if any) list of [`SessionRecord`][SessionRecord]
      * instances with corresponding states. If storage is empty, then an empty list should be returned.
      */
-    fun readAllSessionRecords() : List<SessionRecord<S, State>>
+    fun readAllSessionRecords() : List<SessionRecord<State>>
 
     /**
      * This method is called by `SessionTracker` from within the
@@ -38,7 +38,7 @@ interface ISessionTrackerStorage<S : ISession, State : Enum<State>> {
      *
      * @param sessionRecord [`SessionRecord`][SessionRecord]
      */
-    fun updateSessionRecord(sessionRecord: SessionRecord<S, State>)
+    fun updateSessionRecord(sessionRecord: SessionRecord<State>)
 
     /**
      * This method is called by `SessionTracker` from within the
@@ -46,9 +46,9 @@ interface ISessionTrackerStorage<S : ISession, State : Enum<State>> {
      *
      * The implementation must not defer actual persisting for future.
      *
-     * @param sessionId [`String`][String]
+     * @param sessionId [`SessionId`][SessionId]
      */
-    fun deleteSessionRecord(sessionId: String)
+    fun deleteSessionRecord(sessionId: SessionId)
 
     /**
      * This method is called by `SessionTracker` from within the

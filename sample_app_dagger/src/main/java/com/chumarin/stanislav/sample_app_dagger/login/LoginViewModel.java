@@ -2,15 +2,8 @@ package com.chumarin.stanislav.sample_app_dagger.login;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.chumarin.stanislav.sample_app_dagger.Session;
 import com.chumarin.stanislav.sample_app_dagger.util.BaseViewModel;
-
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
-import javax.inject.Inject;
-
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
@@ -19,10 +12,14 @@ import io.reactivex.subjects.BehaviorSubject;
 import vit.khudenko.android.sessiontracker.SessionRecord;
 import vit.khudenko.android.sessiontracker.SessionTracker;
 
+import javax.inject.Inject;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
 public class LoginViewModel extends BaseViewModel {
 
     @NonNull
-    private final SessionTracker<Session, Session.Event, Session.State> sessionTracker;
+    private final SessionTracker<Session.Event, Session.State> sessionTracker;
     @NonNull
     private BehaviorSubject<State> state = BehaviorSubject.createDefault(State.Idle.INSTANCE);
 
@@ -30,7 +27,7 @@ public class LoginViewModel extends BaseViewModel {
     private Disposable disposable;
 
     @Inject
-    LoginViewModel(@NonNull SessionTracker<Session, Session.Event, Session.State> sessionTracker) {
+    LoginViewModel(@NonNull SessionTracker<Session.Event, Session.State> sessionTracker) {
         this.sessionTracker = sessionTracker;
     }
 
@@ -39,15 +36,14 @@ public class LoginViewModel extends BaseViewModel {
 
         disposable = Observable.fromCallable(() -> {
             synchronized (sessionTracker) {
-                Optional<Session> optionalSession = sessionTracker.getSessions()
+                Optional<SessionRecord<Session.State>> optionalSessionRecord = sessionTracker.getSessionRecords()
                         .stream()
-                        .map(SessionRecord::getSession)
-                        .filter(session -> session.getSessionId().equals(userId))
+                        .filter(record -> record.getSessionId().equals(userId))
                         .findFirst();
-                if (optionalSession.isPresent()) {
+                if (optionalSessionRecord.isPresent()) {
                     sessionTracker.consumeEvent(userId, Session.Event.LOGIN);
                 } else {
-                    sessionTracker.trackSession(new Session(userId), Session.State.ACTIVE);
+                    sessionTracker.trackSession(userId, Session.State.ACTIVE);
                 }
             }
             return userId;

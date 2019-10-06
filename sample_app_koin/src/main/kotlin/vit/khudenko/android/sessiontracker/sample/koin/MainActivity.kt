@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import io.reactivex.disposables.Disposable
 import org.koin.android.ext.android.getKoin
 import org.koin.androidx.viewmodel.ext.android.getViewModel
+import vit.khudenko.android.sessiontracker.SessionId
 
 class MainActivity : AppCompatActivity() {
 
@@ -43,7 +44,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun getSessionId(): String {
+    private fun getSessionId(): SessionId {
         return intent.getStringExtra(EXTRA_CURRENT_SESSION_ID)!!
     }
 
