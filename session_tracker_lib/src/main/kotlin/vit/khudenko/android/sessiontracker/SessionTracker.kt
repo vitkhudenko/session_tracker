@@ -9,37 +9,50 @@ import java.util.*
  *
  * SessionTracker is a general purpose framework to provide a foundation for session management in your app.
  *
- * Your app provides (a) session storage implementation and (b) session state machine configuration while SessionTracker
- * provides callbacks to create/release session resources.
+ * Your app provides (a) session tracking storage implementation and (b) session tracking state machine configuration,
+ * while SessionTracker provides callbacks to create/update/release session resources.
  *
  * ## Contract description
  *
  * ### What is session?
  *
- * Session is a flexible entity - it could be a user that logs in/out or a bluetooth device with all its possible
- * states. In SessionTracker framework, sessions are represented by [`ISession`][ISession] interface with the only
- * requirement to have a unique session ID. Actual implementation of ISession is up to your app.
+ * Session is a flexible entity - it could be a user session with user signing in/out or a bluetooth device session
+ * with all its possible states.
+ *
+ * ### Session tracking state VS. session state
+ *
+ * In SessionTracker framework, sessions are represented by session tracking records - instances of
+ * [`SessionRecord`][SessionRecord]. It is an immutable data structure, that has just 2 fields - session ID and
+ * session tracking state.
+ *
+ * Note, there are two (partially intersecting) types of session state:
+ * 1. The session state that is tracked by SessionTracker, which is always an instance of enum by the contract.
+ * 2. The session state that is specific to your app, which can be as diverse as your app's business logic requires
+ * and which can not be represented by the [`SessionRecord`][SessionRecord].
+ *
+ * Please don't mess one with another. Actual implementation of session, including its persistence, is up to your app
+ * and is out of SessionTracker framework responsibility. It is correct say that session tracking state (the one
+ * tracked by SessionTracker) is a subset of a full session state in your app.
  *
  * ### Persistence
  *
- * SessionTracker framework supports automatic session initialization on application process restarts. Your
+ * SessionTracker framework supports session tracking auto-restoration on application process restarts. Your
  * app must provide an implementation of [`ISessionTrackerStorage`][ISessionTrackerStorage], which is used by
- * SessionTracker to persist/read sessions data.
+ * SessionTracker to make CRUD operations on session tracking records.
  *
- * ### Session states and events
+ * ### Session tracking state machine
  *
  * SessionTracker maintains a state machine per session. Your app must define a set of possible events and
- * states per session. Using events and states your app should provide state machine transitions, which are
- * used to configure session state machine. For example, your app may define the following session events and states:
+ * states per session. Using events and states, your app should provide state machine transitions, which are
+ * used to configure session state machine. For example, your app may define the following session tracking events
+ * and states:
  *
  * ```kotlin
- *     class Session(override val sessionId: String) : ISession {
- *         enum class State {
- *             INACTIVE, ACTIVE
- *         }
- *         enum class Event {
- *             LOGIN, LOGOUT
- *         }
+ *     enum class State {
+ *         INACTIVE, ACTIVE
+ *     }
+ *     enum class Event {
+ *         LOGIN, LOGOUT
  *     }
  * ```
  *
@@ -47,23 +60,23 @@ import java.util.*
  * [`ISessionStateTransitionsSupplier`][ISessionStateTransitionsSupplier]) could be as following:
  *
  * ```kotlin
- *     val sessionStateTransitionsSupplier =
- *             object : ISessionStateTransitionsSupplier<Session, Session.Event, Session.State> {
- *         override fun getStateTransitions(session: Session) = listOf(
+ *     val sessionStateTransitionsSupplier = object : ISessionStateTransitionsSupplier<Event, State> {
+ *         override fun getStateTransitions(sessionId: SessionId) = listOf(
  *             Transition(
- *                 event = Session.Event.LOGIN,
- *                 statePath = listOf(Session.State.INACTIVE, Session.State.ACTIVE)
+ *                 event = Event.LOGIN,
+ *                 statePath = listOf(State.INACTIVE, State.ACTIVE)
  *             ),
  *             Transition(
- *                 event = Session.Event.LOGOUT,
- *                 statePath = listOf(Session.State.ACTIVE, Session.State.INACTIVE)
+ *                 event = Event.LOGOUT,
+ *                 statePath = listOf(State.ACTIVE, State.INACTIVE)
  *             )
  *         )
  *     }
  * ```
  *
- * Such config would mean there are two possible session states (`ACTIVE`/`INACTIVE`) and two possible events: `LOGIN`
- * (to move session from `INACTIVE` to `ACTIVE` state) and `LOGOUT` (to move session from `ACTIVE` to `INACTIVE` state).
+ * Such config would mean there are two possible session tracking states (`ACTIVE`/`INACTIVE`) and two possible session
+ * tracking events: `LOGIN` (to move session from `INACTIVE` to `ACTIVE` state) and `LOGOUT` (to move session from
+ * `ACTIVE` to `INACTIVE` state).
  *
  * ### Session tracking
  *
@@ -71,58 +84,58 @@ import java.util.*
  * [`initialize()`][initialize] call is
  * [`Application.onCreate()`][android.app.Application.onCreate].
  *
- * Suppose your user hits "Login" button, your app authenticates user and creates a Session object. In order to make
+ * Suppose your user hits "Login" button, your app authenticates user and creates a session. In order to make
  * use of SessionTracker the session should be "attached" to SessionTracker:
  *
  * ```kotlin
- *     sessionTracker.trackSession(session, Session.State.ACTIVE)
+ *     sessionTracker.trackSession(sessionId, State.ACTIVE)
  * ```
  *
  * Now SessionTracker is tracking the session until your app calls [`untrackSession(sessionId)`][untrackSession].
- * Next time your app starts (and SessionTracker is initialized), the session will be automatically tracked by
- * SessionTracker with the same `ACTIVE` state.
+ * Next time your app starts (and SessionTracker is initialized), the session tracking will be automatically restored
+ * by SessionTracker with the same `ACTIVE` state.
  *
- * As long as session is tracked, its state changes are propagated to your app via
+ * As long as session is tracked, its session tracking state changes are propagated to your app via
  * [`SessionTracker.Listener`][SessionTracker.Listener].
  *
  * Suppose eventually your user hits "Log Out" button, then your app is responsible to communicate this event
  * to SessionTracker by asking to consume `LOGOUT` event for the session:
  *
  * ```kotlin
- *     sessionTracker.consumeEvent(session.sessionId, Session.Event.LOGOUT)
+ *     sessionTracker.consumeEvent(sessionId, Event.LOGOUT)
  * ```
  *
- * Now SessionTracker updates session state to `INACTIVE`, propagates this state change via
- * [`SessionTracker.Listener`][SessionTracker.Listener] and persists session with its new state . Note, the session
- * is still tracked by SessionTracker, so next time your app starts, the session will be automatically picked up for
- * tracking by SessionTracker with the same `INACTIVE` state.
+ * Now SessionTracker updates session tracking state to `INACTIVE`, persists session record with the new state and
+ * propagates this state change via [`SessionTracker.Listener`][SessionTracker.Listener]. Note, the session
+ * is still tracked by SessionTracker, so next time your app starts, the session tracking will be automatically restored
+ * by SessionTracker with the same `INACTIVE` state.
  *
  * ### Management of session resources
  *
  * [`SessionTracker.Listener`][SessionTracker.Listener] has useful for your app callbacks that allow to manage session
  * resources appropriately:
  *
- * - `onSessionTrackingStarted(sessionTracker: SessionTracker<S, Event, State>, session: S, initState: State)` -
+ * - `onSessionTrackingStarted(sessionTracker: SessionTracker<Event, State>, sessionRecord: SessionRecord<State>)` -
  *     SessionTracker has added session to the list of tracked sessions.
- *     This happens as a result of calling [`SessionTracker.trackSession(session, state)`][trackSession] or
+ *     This happens as a result of calling [`SessionTracker.trackSession(sessionId, state)`][trackSession] or
  *     [`SessionTracker.initialize()`][initialize].
  *     This callback is the right place to create any resources for the session (a DB connection, a DI scope, etc.)
  *     depending on the initState.
  *
- * - `onSessionStateChanged(sessionTracker: SessionTracker<S, Event, State>, session: S, oldState: State, newState: State)` -
- *     session state has changed from oldState to newState.
+ * - `onSessionStateChanged(sessionTracker: SessionTracker<Event, State>, sessionRecord: SessionRecord<State>, oldState: State)` -
+ *     session tracking state has changed.
  *     This happens as a result of calling [`SessionTracker.consumeEvent(sessionId, event)`][consumeEvent].
  *     This callback is the right place to create or release any resources for the session (a DB connection,
  *     a DI scope, etc.).
  *
- * - `onSessionTrackingStopped(sessionTracker: SessionTracker<S, Event, State>, session: S, state: State)` -
+ * - `onSessionTrackingStopped(sessionTracker: SessionTracker<Event, State>, sessionRecord: SessionRecord<State>)` -
  *     SessionTracker has removed session from the list of tracked sessions. This happens as a result
  *     of calling [`SessionTracker.untrackSession(sessionId)`][untrackSession].
  *     This may also happen as a result of calling [`SessionTracker.consumeEvent`][consumeEvent] if session
  *     appears in one of the [`autoUntrackStates`][autoUntrackStates].
  *     This callback is the right place to release any resources for the session (a DB connection, a DI scope, etc.).
  *
- * - `onAllSessionsTrackingStopped(sessionTracker: SessionTracker<S, Event, State>, sessionsData: List<Pair<S, State>>)` -
+ * - `onAllSessionsTrackingStopped(sessionTracker: SessionTracker<Event, State>, sessionRecords: List<SessionRecord<State>>)` -
  *     SessionTracker has removed session from the list of tracked sessions. This happens as a result
  *     of calling [`SessionTracker.untrackAllSessions()`][untrackAllSessions].
  *     This callback is the right place to release any resources for the sessions (a DB connection, a DI scope, etc.).
@@ -145,10 +158,10 @@ import java.util.*
  *
  * Typical SessionTracker usage implies being a singleton in your app.
  */
-class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
-    private val sessionTrackerStorage: ISessionTrackerStorage<S, State>,
-    private val sessionStateTransitionsSupplier: ISessionStateTransitionsSupplier<S, Event, State>,
-    private val listener: Listener<S, Event, State>,
+class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
+    private val sessionTrackerStorage: ISessionTrackerStorage<State>,
+    private val sessionStateTransitionsSupplier: ISessionStateTransitionsSupplier<Event, State>,
+    private val listener: Listener<Event, State>,
     /**
      * If a session appears in one of these states, then `SessionTracker` automatically untracks such session.
      * The effect of automatic untracking is similar to making an explicit [`untrackSession()`][untrackSession] call.
@@ -209,54 +222,53 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
     }
 
     /**
-     * A listener, through which the [`ISession`][ISession]'s lifecycle and state changes are communicated.
+     * A listener, through which the session tracking lifecycle and state changes are communicated.
      *
      * @see [onSessionTrackingStarted]
      * @see [onSessionTrackingStopped]
      * @see [onSessionStateChanged]
+     * @see [onAllSessionsTrackingStopped]
      */
-    interface Listener<S : ISession, Event : Enum<Event>, State : Enum<State>> {
+    interface Listener<Event : Enum<Event>, State : Enum<State>> {
 
         /**
-         * The `SessionTracker` has added `session` to the list of tracked sessions. This happens as a result
+         * The `SessionTracker` has added session to the list of tracked sessions. This happens as a result
          * of calling [`SessionTracker.trackSession()`][trackSession] or [`SessionTracker.initialize()`][initialize].
          *
-         * This callback is the right place to create any resources for the `session`
-         * (a DB connection, a DI scope, etc.) depending on the `initState`.
+         * This callback is the right place to create any resources for the session
+         * (a DB connection, a DI scope, etc.).
          */
         fun onSessionTrackingStarted(
-            sessionTracker: SessionTracker<S, Event, State>,
-            session: S, initState: State
+            sessionTracker: SessionTracker<Event, State>,
+            sessionRecord: SessionRecord<State>
         )
 
         /**
-         * The `session` state has changed from `oldState` to `newState`.
+         * The session tracking state has changed from `oldState` to `newState`.
          * This happens as a result of calling [`SessionTracker.consumeEvent()`][consumeEvent].
          *
          * This callback is the right place to create or release any resources
-         * for the `session` (a DB connection, a DI scope, etc.).
+         * for the session (a DB connection, a DI scope, etc.).
          */
         fun onSessionStateChanged(
-            sessionTracker: SessionTracker<S, Event, State>,
-            session: S,
-            oldState: State,
-            newState: State
+            sessionTracker: SessionTracker<Event, State>,
+            sessionRecord: SessionRecord<State>,
+            oldState: State
         )
 
         /**
-         * The `SessionTracker` has removed `session` from the list of tracked sessions. This happens as a result
+         * The `SessionTracker` has removed session from the list of tracked sessions. This happens as a result
          * of calling [`SessionTracker.untrackSession()`][untrackSession].
          *
          * This may also happen as a result of calling [`SessionTracker.consumeEvent()`][SessionTracker.consumeEvent]
          * if session appears in one of the [`autoUntrackStates`][autoUntrackStates].
          *
          * This callback is the right place to release any resources for
-         * the `session` (a DB connection, a DI scope, etc.).
+         * the session (a DB connection, a DI scope, etc.).
          */
         fun onSessionTrackingStopped(
-            sessionTracker: SessionTracker<S, Event, State>,
-            session: S,
-            state: State
+            sessionTracker: SessionTracker<Event, State>,
+            sessionRecord: SessionRecord<State>
         )
 
         /**
@@ -267,8 +279,8 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
          * the sessions (a DB connection, a DI scope, etc.).
          */
         fun onAllSessionsTrackingStopped(
-            sessionTracker: SessionTracker<S, Event, State>,
-            sessionsData: List<Pair<S, State>>
+            sessionTracker: SessionTracker<Event, State>,
+            sessionRecords: List<SessionRecord<State>>
         )
     }
 
@@ -296,7 +308,7 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
     }
 
     private var initialized: Boolean = false
-    private val sessionsMap = LinkedHashMap<String, SessionInfo<S, Event, State>>()
+    private val sessionsMap = LinkedHashMap<SessionId, SessionInfo<Event, State>>()
     private var persisting = false
 
     /**
@@ -305,7 +317,7 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
      * Subsequent calls are ignored.
      *
      * This method calls [`ISessionTrackerStorage.readAllSessionRecords()`][ISessionTrackerStorage.readAllSessionRecords],
-     * starts tracking the obtained sessions and notifies sessions listener (see
+     * starts tracking the obtained session records and notifies session tracker listener (see
      * [`Listener.onSessionTrackingStarted()`][Listener.onSessionTrackingStarted]).
      *
      * @throws [RuntimeException] for a strict [`mode`][mode], if [`autoUntrackStates`][autoUntrackStates] are defined
@@ -313,7 +325,7 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
      * session from tracking.
      * @throws [RuntimeException] for a strict [`mode`][mode], if
      * [`sessionStateTransitionsSupplier`][sessionStateTransitionsSupplier] returns transitions that cause validation
-     * errors while creating session's state machine. For a relaxed [`mode`][mode] it just logs an error
+     * errors while creating session tracking state machine. For a relaxed [`mode`][mode] it just logs an error
      * message and skips such session from tracking.
      */
     @Synchronized
@@ -332,10 +344,10 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
         val loadedSessionRecords = sessionTrackerStorage.readAllSessionRecords()
 
         loadedSessionRecords
-            .filter { (_, state) ->
-                state in autoUntrackStates
-            }.forEach { (session, state) ->
-                val explanation = "session with ID '${session.sessionId}' is in auto-untrack state (${state})"
+            .filter { sessionRecord ->
+                sessionRecord.state in autoUntrackStates
+            }.forEach { (sessionId, state) ->
+                val explanation = "session with ID '${sessionId}' is in auto-untrack state (${state})"
                 if (mode.strict) {
                     throw RuntimeException("Unable to initialize $TAG: $explanation")
                 } else {
@@ -344,23 +356,22 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
             }
 
         loadedSessionRecords
-            .filterNot { (_, state) ->
-                state in autoUntrackStates
+            .filterNot { sessionRecord ->
+                sessionRecord.state in autoUntrackStates
             }
-            .map { (session, state) ->
+            .map { sessionRecord ->
                 val stateMachine = try {
-                    setupSessionStateMachine(session, state)
+                    setupSessionStateMachine(sessionRecord)
                 } catch (e: Exception) {
                     throw RuntimeException(
                         "Unable to initialize $TAG: error creating ${StateMachine::class.java.simpleName}", e
                     )
                 }
-                SessionInfo(session, stateMachine)
+                sessionRecord to stateMachine
             }
-            .forEach { sessionInfo ->
-                val (session, stateMachine) = sessionInfo
-                sessionsMap[session.sessionId] = sessionInfo
-                listener.onSessionTrackingStarted(this@SessionTracker, session, stateMachine.getCurrentState())
+            .forEach { (sessionRecord, stateMachine) ->
+                sessionsMap[sessionRecord.sessionId] = SessionInfo(stateMachine)
+                listener.onSessionTrackingStarted(this@SessionTracker, sessionRecord)
             }
 
         initialized = true
@@ -371,92 +382,90 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
     }
 
     /**
-     * @return a list of the currently tracked sessions with corresponding states.
+     * @return a list of the currently tracked session records.
      *
      * @throws [RuntimeException] for a strict [`mode`][mode], if `SessionTracker` has not been initialized.
      * For a relaxed [`mode`][mode] it just logs an error message and returns an empty list.
      */
     @Synchronized
-    fun getSessions(): List<SessionRecord<S, State>> {
-        return if (ensureInitialized("getSessions")) {
-            val sessions = sessionsMap.values
-                .map { it.toSessionRecord() }
-                .toMutableList()
+    fun getSessionRecords(): List<SessionRecord<State>> {
+        return if (ensureInitialized("getSessionRecords")) {
+            val sessionRecords = sessionsMap.entries.map {
+                SessionRecord(sessionId = it.key, state = it.value.stateMachine.getCurrentState())
+            }.toMutableList()
             if (mode.verbose) {
-                val dump = sessions.joinToString(
+                val dump = sessionRecords.joinToString(
                     prefix = "[", postfix = "]"
-                ) { (session, state) -> "{ '${session.sessionId}': $state }" }
-                logger.d(TAG, "getSessions: $dump")
+                ) { (sessionId, state) -> "{ '${sessionId}': $state }" }
+                logger.d(TAG, "getSessionRecords: $dump")
             }
-            sessions
+            sessionRecords
         } else {
             emptyList()
         }
     }
 
     /**
-     * Starts tracking a session, notifies session listener (see
-     * [`SessionTracker.Listener.onSessionTrackingStarted()`][Listener.onSessionTrackingStarted]) and
-     * persists sessions via [`ISessionTrackerStorage`][ISessionTrackerStorage].
+     * Starts tracking a session for the sessionId, persists a new session record via
+     * [`ISessionTrackerStorage`][ISessionTrackerStorage] and notifies session tracker listener
+     * (see [`SessionTracker.Listener.onSessionTrackingStarted()`][Listener.onSessionTrackingStarted]).
      *
-     * If session with the same ID is already present, then the call does nothing.
+     * If session with the same sessionId is already tracked, then the call does nothing.
      *
-     * @param session [`ISession`][ISession] to track.
-     * @param state initial [`State`][State] of the `session`.
+     * @param sessionId [`SessionId`][SessionId] - ID of the session to track.
+     * @param state [`State`][State] - initial session tracking state.
      *
      * @throws [IllegalArgumentException] for a strict [`mode`][mode], if [`autoUntrackStates`][autoUntrackStates]
-     * are defined AND session is in one of such states. For a relaxed [`mode`][mode] it just logs an error message
+     * are defined AND sessionId is in one of such states. For a relaxed [`mode`][mode] it just logs an error message
      * and does nothing.
      * @throws [RuntimeException] for a strict [`mode`][mode], if `SessionTracker` has not been initialized.
      * For a relaxed [`mode`][mode] it just logs an error message and does nothing.
      * @throws [RuntimeException] for a strict [`mode`][mode], if
      * [`sessionStateTransitionsSupplier`][sessionStateTransitionsSupplier] returns transitions that
-     * cause validation errors while creating session's state machine. For a relaxed [`mode`][mode] it just logs
+     * cause validation errors while creating session tracking state machine. For a relaxed [`mode`][mode] it just logs
      * an error message and does nothing.
      * @throws [RuntimeException] for a strict [`mode`][mode], if this call is initiated from the
      * [`sessionTrackerStorage`][sessionTrackerStorage]. For a relaxed [`mode`][mode] it just logs an error message
      * and does nothing.
      */
     @Synchronized
-    fun trackSession(session: S, state: State) {
+    fun trackSession(sessionId: SessionId, state: State) {
         if (!ensureInitialized("trackSession")) {
             return
         }
         if (mode.verbose) {
-            logger.d(TAG, "trackSession: sessionId = '${session.sessionId}', state = $state")
+            logger.d(TAG, "trackSession: sessionId = '${sessionId}', state = $state")
         }
         if (!ensureNotPersisting("trackSession")) {
             return
         }
-        if (sessionsMap.contains(session.sessionId)) {
-            logger.w(TAG, "trackSession: session with ID '${session.sessionId}' already exists")
+        if (sessionsMap.contains(sessionId)) {
+            logger.w(TAG, "trackSession: session with ID '${sessionId}' already exists")
         } else {
             if (state in autoUntrackStates) {
-                val explanation = "session with ID '${session.sessionId}' is in auto-untrack state ($state)"
-                if (mode.strict) {
-                    throw IllegalArgumentException("Unable to track session: $explanation")
-                }
+                val explanation = "session with ID '${sessionId}' is in auto-untrack state ($state)"
+                require(mode.strict.not()) { "Unable to track session: $explanation" }
                 logger.e(TAG, "trackSession: $explanation, rejecting this session")
             } else {
+                val sessionRecord = SessionRecord(sessionId, state)
                 val stateMachine = try {
-                    setupSessionStateMachine(session, state)
+                    setupSessionStateMachine(sessionRecord)
                 } catch (e: Exception) {
                     throw RuntimeException(
                         "$TAG failed to track session: error creating ${StateMachine::class.java.simpleName}", e
                     )
                 }
-                val sessionInfo = SessionInfo(session, stateMachine)
-                doPersistAction { sessionTrackerStorage.createSessionRecord(sessionInfo.toSessionRecord()) }
-                sessionsMap[session.sessionId] = sessionInfo
-                listener.onSessionTrackingStarted(this@SessionTracker, session, stateMachine.getCurrentState())
+                doPersistAction { sessionTrackerStorage.createSessionRecord(sessionRecord) }
+                sessionsMap[sessionId] = SessionInfo(stateMachine)
+                listener.onSessionTrackingStarted(this@SessionTracker, sessionRecord)
             }
         }
     }
 
     /**
-     * Stops tracking a session with specified `sessionId`, notifies session listener
-     * (see [`SessionTracker.Listener.onSessionTrackingStopped()`][Listener.onSessionTrackingStopped]) and removes
-     * session from persistent storage (via [`ISessionTrackerStorage`][ISessionTrackerStorage] implementation).
+     * Stops tracking a session with specified `sessionId`, removes corresponding session record from persistent storage
+     * (via [`ISessionTrackerStorage`][ISessionTrackerStorage] implementation) and notifies session tracker listener
+     * (see [`SessionTracker.Listener.onSessionTrackingStopped()`][Listener.onSessionTrackingStopped]).
      *
      * If `SessionTracker` does not track a session with specified `sessionId`, then this call does nothing.
      *
@@ -465,7 +474,7 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
      * Note, it's possible to define [`autoUntrackStates`][autoUntrackStates] via `SessionTracker` constructor, so
      * sessions are untracked automatically at [`SessionTracker.consumeEvent()`][consumeEvent].
      *
-     * @param sessionId [String] session ID.
+     * @param sessionId [`SessionId`][SessionId].
      *
      * @throws [RuntimeException] for a strict [`mode`][mode], if `SessionTracker` has not been initialized.
      * For a relaxed [`mode`][mode] it just logs an error message and does nothing.
@@ -474,7 +483,7 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
      * and does nothing.
      */
     @Synchronized
-    fun untrackSession(sessionId: String) {
+    fun untrackSession(sessionId: SessionId) {
         if (!ensureInitialized("untrackSession")) {
             return
         }
@@ -492,19 +501,19 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
                 logger.w(TAG, "untrackSession: session with ID '$sessionId' is already untracking")
             } else {
                 sessionsMap[sessionId] = sessionInfo.copy(isUntracking = true)
-                doUntrackSession(sessionInfo)
+                doUntrackSession(sessionId, sessionInfo.stateMachine)
             }
         }
     }
 
     /**
-     * Stops tracking all the currently tracked sessions, notifies sessions listener for each session (see
-     * [`Listener.onSessionTrackingStopped`][Listener.onSessionTrackingStopped]) and removes sessions from persistent
-     * storage (via [`ISessionTrackerStorage`][ISessionTrackerStorage] implementation).
+     * Stops tracking all currently tracked sessions, removes session records from persistent storage (via
+     * [`ISessionTrackerStorage`][ISessionTrackerStorage] implementation) and notifies session tracker listener
+     * (see [`Listener.onAllSessionsTrackingStopped()`][Listener.onAllSessionsTrackingStopped]).
      *
      * If `SessionTracker` does not track any sessions, then this call does nothing.
      *
-     * Note, this method does not modify session state.
+     * Note, this method does not modify session tracking state of the session records.
      *
      * Note, it's possible to define [`autoUntrackStates`][autoUntrackStates] via `SessionTracker` constructor, so
      * sessions are untracked automatically at [`SessionTracker.consumeEvent()`][consumeEvent].
@@ -534,32 +543,33 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
 
             doPersistAction { sessionTrackerStorage.deleteAllSessionRecords() }
 
-            sessionsMap.values.forEach { (_, stateMachine) -> stateMachine.removeAllListeners() }
+            sessionsMap.values.forEach { it.stateMachine.removeAllListeners() }
 
-            val sessionsWithState = sessionsMap.values.map { (session, stateMachine) ->
-                session to stateMachine.getCurrentState()
+            val sessionRecords = sessionsMap.entries.map { (sessionId, sessionInfo) ->
+                SessionRecord(sessionId, sessionInfo.stateMachine.getCurrentState())
             }
 
             sessionsMap.clear()
 
-            listener.onAllSessionsTrackingStopped(this@SessionTracker, sessionsWithState)
+            listener.onAllSessionsTrackingStopped(this@SessionTracker, sessionRecords)
         }
     }
 
     /**
      * Attempts to apply the specified [`event`][event] to the specified session. Whether the event actually causes
-     * session state change depends on the session state machine configuration and current session state. If session
-     * state change occurs, then sessions listener is notified and sessions are persisted (via
-     * [`ISessionTrackerStorage`][ISessionTrackerStorage]).
+     * session tracking state change depends on the session state machine configuration and current session tracking
+     * state. If session tracking state change occurs, then updated session record is persisted
+     * (via [`ISessionTrackerStorage`][ISessionTrackerStorage]) and session tracking listener is notified.
      *
      * If, as a result of the event consuming, the session appears in a one of the
-     * [`autoUntrackStates`][autoUntrackStates] (assuming these were defined), then `SessionTracker` stops
-     * tracking such session, notifies session listener and removes this session from persistent storage.
+     * [`autoUntrackStates`][autoUntrackStates] (assuming these were defined), then `SessionTracker` also stops
+     * tracking the session, removes corresponding session record from the persistent storage and notifies session
+     * tracking listener.
      *
      * If `SessionTracker` does not track a session with specified `sessionId`, then this call does nothing
      * and returns `false`.
      *
-     * @param sessionId `String`.
+     * @param sessionId [`SessionId`][SessionId].
      * @param event [`Event`][Event].
      *
      * @return flag whether the event was consumed (meaning moving to a new state) or ignored.
@@ -571,7 +581,7 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
      * and returns false.
      */
     @Synchronized
-    fun consumeEvent(sessionId: String, event: Event): Boolean {
+    fun consumeEvent(sessionId: SessionId, event: Event): Boolean {
         if (!ensureInitialized("consumeEvent")) {
             return false
         }
@@ -601,12 +611,11 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
         return false
     }
 
-    private fun doUntrackSession(sessionInfo: SessionInfo<S, Event, State>) {
-        val (session, stateMachine) = sessionInfo
+    private fun doUntrackSession(sessionId: SessionId, stateMachine: StateMachine<Event, State>) {
         stateMachine.removeAllListeners()
-        doPersistAction { sessionTrackerStorage.deleteSessionRecord(session.sessionId) }
-        sessionsMap.remove(session.sessionId)
-        listener.onSessionTrackingStopped(this@SessionTracker, session, stateMachine.getCurrentState())
+        doPersistAction { sessionTrackerStorage.deleteSessionRecord(sessionId) }
+        sessionsMap.remove(sessionId)
+        listener.onSessionTrackingStopped(this@SessionTracker, SessionRecord(sessionId, stateMachine.getCurrentState()))
     }
 
     private fun ensureInitialized(method: String): Boolean {
@@ -634,10 +643,12 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
         return !persisting
     }
 
-    private fun setupSessionStateMachine(session: S, state: State): StateMachine<Event, State> {
+    private fun setupSessionStateMachine(sessionRecord: SessionRecord<State>): StateMachine<Event, State> {
+        val (sessionId, state) = sessionRecord
+
         val builder = StateMachine.Builder<Event, State>().setInitialState(state)
 
-        sessionStateTransitionsSupplier.getStateTransitions(session)
+        sessionStateTransitionsSupplier.getStateTransitions(sessionId)
             .forEach { (event, statePath) ->
                 builder.addTransition(event, statePath)
             }
@@ -646,9 +657,9 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
 
         stateMachine.addListener(object : StateMachine.Listener<State> {
             override fun onStateChanged(oldState: State, newState: State) {
-                val baseLogMessage = "onStateChanged: '$oldState' -> '$newState', sessionId = '${session.sessionId}'"
+                val baseLogMessage = "onStateChanged: '$oldState' -> '$newState', sessionId = '${sessionId}'"
 
-                val sessionInfo = sessionsMap[session.sessionId]
+                val sessionInfo = sessionsMap[sessionId]
 
                 checkNotNull(sessionInfo) { "$baseLogMessage - session not found" }
                 check(sessionInfo.isUntracking.not()) { "$baseLogMessage - session is untracking" }
@@ -657,18 +668,20 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
                     logger.d(TAG, baseLogMessage)
                 }
 
+                val updatedSessionRecord = SessionRecord(sessionId, newState)
+
                 if (newState in autoUntrackStates) {
                     logger.d(TAG, "$baseLogMessage, going to auto-untrack session..")
                     val updatedSessionInfo = sessionInfo.copy(isUntracking = true)
-                    sessionsMap[session.sessionId] = updatedSessionInfo
+                    sessionsMap[sessionId] = updatedSessionInfo
                     stateMachine.removeAllListeners()
-                    listener.onSessionStateChanged(this@SessionTracker, session, oldState, newState)
-                    if (sessionsMap.contains(session.sessionId)) {
-                        doUntrackSession(updatedSessionInfo)
+                    listener.onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)
+                    if (sessionsMap.containsKey(sessionId)) {
+                        doUntrackSession(sessionId, updatedSessionInfo.stateMachine)
                     }
                 } else {
-                    doPersistAction { sessionTrackerStorage.updateSessionRecord(sessionInfo.toSessionRecord()) }
-                    listener.onSessionStateChanged(this@SessionTracker, session, oldState, newState)
+                    doPersistAction { sessionTrackerStorage.updateSessionRecord(updatedSessionRecord) }
+                    listener.onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)
                 }
             }
         })
@@ -685,11 +698,10 @@ class SessionTracker<S : ISession, Event : Enum<Event>, State : Enum<State>>(
         }
     }
 
-    private data class SessionInfo<S : ISession, Event : Enum<Event>, State : Enum<State>>(
-        val session: S,
+    private data class SessionInfo<Event : Enum<Event>, State : Enum<State>>(
         val stateMachine: StateMachine<Event, State>,
         val isUntracking: Boolean = false
-    ) {
-        fun toSessionRecord() = SessionRecord(session, stateMachine.getCurrentState())
-    }
+    )
 }
+
+typealias SessionId = String

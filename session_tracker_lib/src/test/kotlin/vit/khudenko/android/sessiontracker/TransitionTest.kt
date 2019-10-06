@@ -2,17 +2,18 @@ package vit.khudenko.android.sessiontracker
 
 import org.junit.Assert.assertSame
 import org.junit.Test
-import vit.khudenko.android.sessiontracker.test_util.Session
+import vit.khudenko.android.sessiontracker.test_util.Event
+import vit.khudenko.android.sessiontracker.test_util.State
 
 class TransitionTest {
 
     @Test
     fun getEvent() {
-        val event = Session.Event.LOGIN
+        val event = Event.LOGIN
 
         val transition = Transition(
             event,
-            emptyList<Session.State>()
+            emptyList<State>()
         )
 
         assertSame(event, transition.event)
@@ -20,10 +21,10 @@ class TransitionTest {
 
     @Test
     fun getStatePath() {
-        val statePath = listOf(Session.State.INACTIVE, Session.State.ACTIVE)
+        val statePath = listOf(State.INACTIVE, State.ACTIVE)
 
         val transition = Transition(
-            Session.Event.LOGIN,
+            Event.LOGIN,
             statePath
         )
 

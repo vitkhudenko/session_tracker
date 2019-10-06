@@ -11,7 +11,7 @@ import vit.khudenko.android.sessiontracker.sample.koin.util.BaseViewModel
 import java.util.concurrent.TimeUnit
 
 class LoginViewModel(
-    private val sessionTracker: SessionTracker<Session, Session.Event, Session.State>
+    private val sessionTracker: SessionTracker<Session.Event, Session.State>
 ) : BaseViewModel() {
 
     private val state: BehaviorSubject<State> = BehaviorSubject.createDefault(State.Idle)
@@ -23,11 +23,10 @@ class LoginViewModel(
 
         disposable = Observable.fromCallable {
             synchronized(sessionTracker) {
-                val targetSession = sessionTracker.getSessions()
-                    .map { (session, _) -> session }
-                    .firstOrNull { session -> session.sessionId == userId }
-                if (targetSession == null) {
-                    sessionTracker.trackSession(Session(userId), Session.State.ACTIVE)
+                val targetSessionRecord = sessionTracker.getSessionRecords()
+                    .firstOrNull { record -> record.sessionId == userId }
+                if (targetSessionRecord == null) {
+                    sessionTracker.trackSession(userId, Session.State.ACTIVE)
                 } else {
                     sessionTracker.consumeEvent(userId, Session.Event.LOGIN)
                 }

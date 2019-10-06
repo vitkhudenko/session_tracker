@@ -10,21 +10,19 @@ import vit.khudenko.android.sessiontracker.sample.koin.login.LoginActivity
 
 class SplashActivity : AppCompatActivity() {
 
-    private val sessionTracker: SessionTracker<Session, Session.Event, Session.State> by inject()
+    private val sessionTracker: SessionTracker<Session.Event, Session.State> by inject()
 
     private val handler: Handler = Handler()
 
     private val action = Runnable {
-        val activeSessions = sessionTracker.getSessions()
-            .filter { (_, state) ->
-                state == Session.State.ACTIVE
-            }.map { (session, _) ->
-                session
+        val activeSessionRecords = sessionTracker.getSessionRecords()
+            .filter { record ->
+                record.state == Session.State.ACTIVE
             }
-        val currentSessionId = if (activeSessions.isEmpty()) {
+        val currentSessionId = if (activeSessionRecords.isEmpty()) {
             null
         } else {
-            activeSessions.first().sessionId
+            activeSessionRecords.first().sessionId
         }
         if (currentSessionId == null) {
             startActivity(Intent(this, LoginActivity::class.java))

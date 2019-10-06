@@ -2,28 +2,28 @@ package vit.khudenko.android.sessiontracker
 
 import org.junit.Assert.assertSame
 import org.junit.Test
-import vit.khudenko.android.sessiontracker.test_util.Session
+import vit.khudenko.android.sessiontracker.test_util.State
 
 class SessionRecordTest {
 
     @Test
     fun getSession() {
-        val session = Session("session_id")
+        val sessionId = "session_id"
 
         val sessionRecord = SessionRecord(
-            session,
-            Session.State.INACTIVE
+            sessionId,
+            State.INACTIVE
         )
 
-        assertSame(session, sessionRecord.session)
+        assertSame(sessionId, sessionRecord.sessionId)
     }
 
     @Test
     fun getState() {
-        val state = Session.State.INACTIVE
+        val state = State.INACTIVE
 
         val sessionRecord = SessionRecord(
-            Session("session_id"),
+            "session_id",
             state
         )
 

@@ -6,12 +6,13 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
+import vit.khudenko.android.sessiontracker.SessionId
 import vit.khudenko.android.sessiontracker.SessionTracker
 import vit.khudenko.android.sessiontracker.sample.koin.util.BaseViewModel
 import java.util.concurrent.TimeUnit
 
 class MainViewModel(
-    private val sessionTracker: SessionTracker<Session, Session.Event, Session.State>
+    private val sessionTracker: SessionTracker<Session.Event, Session.State>
 ) : BaseViewModel() {
 
     private val state: BehaviorSubject<State> = BehaviorSubject.createDefault(
@@ -20,7 +21,7 @@ class MainViewModel(
 
     private var disposable: Disposable? = null
 
-    fun onLogOutButtonClicked(sessionId: String) {
+    fun onLogOutButtonClicked(sessionId: SessionId) {
         state.onNext(State.Progress)
 
         disposable = Completable.fromAction {
@@ -34,7 +35,7 @@ class MainViewModel(
             }
     }
 
-    fun onLogOutAndForgetButtonClicked(sessionId: String) {
+    fun onLogOutAndForgetButtonClicked(sessionId: SessionId) {
         state.onNext(State.Progress)
 
         disposable = Completable.fromAction {

@@ -5,7 +5,7 @@ package vit.khudenko.android.sessiontracker
  *
  * @see ISessionTrackerStorage
  */
-data class SessionRecord<S : ISession, State : Enum<State>>(
-    val session: S,
+data class SessionRecord<State : Enum<State>>(
+    val sessionId: SessionId,
     val state: State
 )

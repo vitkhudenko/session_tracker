@@ -1,17 +1,10 @@
 package com.chumarin.stanislav.sample_app_dagger.di;
 
 import androidx.annotation.NonNull;
-
 import com.chumarin.stanislav.sample_app_dagger.App;
 import com.chumarin.stanislav.sample_app_dagger.Session;
 import com.chumarin.stanislav.sample_app_dagger.SessionTrackerListener;
 import com.chumarin.stanislav.sample_app_dagger.SessionTrackerStorage;
-
-import java.util.Arrays;
-import java.util.HashSet;
-
-import javax.inject.Singleton;
-
 import dagger.Module;
 import dagger.Provides;
 import vit.khudenko.android.sessiontracker.ISessionStateTransitionsSupplier;
@@ -19,14 +12,18 @@ import vit.khudenko.android.sessiontracker.ISessionTrackerStorage;
 import vit.khudenko.android.sessiontracker.SessionTracker;
 import vit.khudenko.android.sessiontracker.Transition;
 
+import javax.inject.Singleton;
+import java.util.Arrays;
+import java.util.HashSet;
+
 @Module
 class AppModule {
 
     @Provides
     @Singleton
-    public SessionTracker<Session, Session.Event, Session.State> provideSessionTracker(
-            @NonNull ISessionTrackerStorage<Session, Session.State> sessionStorage,
-            @NonNull ISessionStateTransitionsSupplier<Session, Session.Event, Session.State> stateTransitionsSupplier,
+    public SessionTracker<Session.Event, Session.State> provideSessionTracker(
+            @NonNull ISessionTrackerStorage<Session.State> sessionStorage,
+            @NonNull ISessionStateTransitionsSupplier<Session.Event, Session.State> stateTransitionsSupplier,
             @NonNull SessionTrackerListener sessionStateListener
     ) {
         return new SessionTracker<>(
@@ -43,7 +40,7 @@ class AppModule {
 
     @Provides
     @Singleton
-    public ISessionStateTransitionsSupplier<Session, Session.Event, Session.State> stateTransitionsSupplier() {
+    public ISessionStateTransitionsSupplier<Session.Event, Session.State> stateTransitionsSupplier() {
         return session -> Arrays.asList(
                 new Transition<>(Session.Event.LOGIN, Arrays.asList(Session.State.INACTIVE, Session.State.ACTIVE)),
                 new Transition<>(Session.Event.LOGOUT, Arrays.asList(Session.State.ACTIVE, Session.State.INACTIVE)),
@@ -53,7 +50,7 @@ class AppModule {
 
     @Provides
     @Singleton
-    public ISessionTrackerStorage<Session, Session.State> sessionStorage(App app) {
+    public ISessionTrackerStorage<Session.State> sessionStorage(App app) {
         return new SessionTrackerStorage(app);
     }
 

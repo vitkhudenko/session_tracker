@@ -25,15 +25,13 @@ package vit.khudenko.android.sessiontracker
  *     )
  * ```
  *
- * @param [S] [`ISession`][ISession] implementation.
  * @param [Event] event parameter of enum type.
  * @param [State] state parameter of enum type.
  */
-interface ISessionStateTransitionsSupplier<S : ISession, Event : Enum<Event>, State : Enum<State>> {
+interface ISessionStateTransitionsSupplier<Event : Enum<Event>, State : Enum<State>> {
 
     /**
-     * @return a list of transitions to configure `session`'s state
-     * machine with.
+     * @return a list of transitions to configure session state machine with.
      *
      * Transition consists of event and state path. State path is a list of states.
      *
@@ -45,7 +43,7 @@ interface ISessionStateTransitionsSupplier<S : ISession, Event : Enum<Event>, St
      * - if statePath does not consist of unique states
      * - if a duplicate transition identified (by a combination of event and starting state)
      *
-     * @param session [`ISession`][ISession] implementation.
+     * @param sessionId [`SessionId`][SessionId].
      */
-    fun getStateTransitions(session: S): List<Transition<Event, State>>
+    fun getStateTransitions(sessionId: SessionId): List<Transition<Event, State>>
 }

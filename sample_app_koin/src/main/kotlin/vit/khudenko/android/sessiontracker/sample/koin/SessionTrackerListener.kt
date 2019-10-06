@@ -5,12 +5,14 @@ import android.util.Log
 import org.koin.android.ext.android.getKoin
 import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
+import vit.khudenko.android.sessiontracker.SessionId
+import vit.khudenko.android.sessiontracker.SessionRecord
 import vit.khudenko.android.sessiontracker.SessionTracker
 import vit.khudenko.android.sessiontracker.sample.koin.Session.Event
 import vit.khudenko.android.sessiontracker.sample.koin.Session.State
 import vit.khudenko.android.sessiontracker.sample.koin.di.SCOPE_ID_USER_SESSION
 
-class SessionTrackerListener(private val app: Application) : SessionTracker.Listener<Session, Event, State> {
+class SessionTrackerListener(private val app: Application) : SessionTracker.Listener<Event, State> {
 
     companion object {
         private val TAG = SessionTrackerListener::class.java.simpleName
@@ -19,48 +21,48 @@ class SessionTrackerListener(private val app: Application) : SessionTracker.List
     private var scope: Scope? = null
 
     override fun onSessionTrackingStarted(
-        sessionTracker: SessionTracker<Session, Event, State>,
-        session: Session,
-        initState: State
+        sessionTracker: SessionTracker<Event, State>,
+        sessionRecord: SessionRecord<State>
     ) {
-        Log.d(TAG, "onSessionTrackingStarted: session ID = ${session.sessionId}, initState = $initState")
+        val (sessionId, initState) = sessionRecord
+        Log.d(TAG, "onSessionTrackingStarted: session ID = ${sessionId}, initState = $initState")
         if (initState == State.ACTIVE) {
-            createKoinScope(session.sessionId)
+            createKoinScope(sessionId)
         }
     }
 
     override fun onSessionTrackingStopped(
-        sessionTracker: SessionTracker<Session, Event, State>,
-        session: Session,
-        state: State
+        sessionTracker: SessionTracker<Event, State>,
+        sessionRecord: SessionRecord<State>
     ) {
-        Log.d(TAG, "onSessionTrackingStopped: session ID = ${session.sessionId}, state = $state")
-        closeKoinScope(session.sessionId)
+        val (sessionId, state) = sessionRecord
+        Log.d(TAG, "onSessionTrackingStopped: session ID = ${sessionId}, state = $state")
+        closeKoinScope(sessionId)
     }
 
     override fun onSessionStateChanged(
-        sessionTracker: SessionTracker<Session, Event, State>,
-        session: Session,
-        oldState: State,
-        newState: State
+        sessionTracker: SessionTracker<Event, State>,
+        sessionRecord: SessionRecord<State>,
+        oldState: State
     ) {
-        Log.d(TAG, "onSessionStateChanged: session ID = ${session.sessionId}, states = ($oldState -> $newState)")
+        val (sessionId, newState) = sessionRecord
+        Log.d(TAG, "onSessionStateChanged: session ID = ${sessionId}, states = ($oldState -> $newState)")
         when (newState) {
-            State.INACTIVE -> closeKoinScope(session.sessionId)
-            State.ACTIVE -> createKoinScope(session.sessionId)
-            State.FORGOTTEN -> closeKoinScope(session.sessionId)
+            State.INACTIVE -> closeKoinScope(sessionId)
+            State.ACTIVE -> createKoinScope(sessionId)
+            State.FORGOTTEN -> closeKoinScope(sessionId)
         }
     }
 
     override fun onAllSessionsTrackingStopped(
-        sessionTracker: SessionTracker<Session, Event, State>,
-        sessionsData: List<Pair<Session, State>>
+        sessionTracker: SessionTracker<Event, State>,
+        sessionRecords: List<SessionRecord<State>>
     ) {
         Log.d(TAG, "onAllSessionsTrackingStopped")
-        sessionsData.forEach { (session, _) -> closeKoinScope(session.sessionId) }
+        sessionRecords.forEach { (sessionId, _) -> closeKoinScope(sessionId) }
     }
 
-    private fun closeKoinScope(sessionId: String) {
+    private fun closeKoinScope(sessionId: SessionId) {
         if (scope != null) {
             Log.d(TAG, "closeKoinScope: session ID = '$sessionId'")
             scope!!.close()
@@ -70,7 +72,7 @@ class SessionTrackerListener(private val app: Application) : SessionTracker.List
         }
     }
 
-    private fun createKoinScope(sessionId: String) {
+    private fun createKoinScope(sessionId: SessionId) {
         if (scope != null) {
             Log.w(TAG, "createKoinScope: scope already exists for session with ID '$sessionId'")
         } else {

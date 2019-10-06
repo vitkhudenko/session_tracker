@@ -1,8 +1,8 @@
 ## TL;DR
 
 SessionTracker is a general purpose framework to provide a foundation for session management in your app.
-Your app provides (a) session storage implementation and (b) session state machine configuration while SessionTracker
-provides callbacks to create/release session resources.
+Your app provides (a) session tracking storage implementation and (b) session tracking state machine configuration,
+while SessionTracker provides callbacks to create/update/release session resources.
 
 ## Integration
 
@@ -27,103 +27,118 @@ implementation 'vit.khudenko.android:sessiontracker:0.2.1'
 ## Contract description
 
 ### What is session?
-Session is a flexible entity - it could be a user that logs in/out or a bluetooth device with all its possible
-states. In SessionTracker framework, sessions are represented by `ISession` interface with the only
-requirement to have a unique session ID. Actual implementation of ISession is up to your app.
+
+Session is a flexible entity - it could be a user session with user signing in/out or a bluetooth device session
+with all its possible states.
+
+### Session tracking state VS. session state
+
+In SessionTracker framework, sessions are represented by session tracking records - instances of
+`SessionRecord`. It is an immutable data structure, that has just 2 fields - session ID and
+session tracking state.
+
+Note, there are two (partially intersecting) types of session state:
+1. The session state that is tracked by SessionTracker, which is always an instance of enum by the contract.
+2. The session state that is specific to your app, which can be as diverse as your app's business logic requires
+and which can not be represented by the `SessionRecord`.
+
+Please don't mess one with another. Actual implementation of session, including its persistence, is up to your app
+and is out of SessionTracker framework responsibility. It is correct say that session tracking state (the one
+tracked by SessionTracker) is a subset of a full session state in your app.
+
 
 ### Persistence
 
-SessionTracker framework supports automatic session initialization on application process restarts. Your
-app must provide an implementation of `ISessionTrackerStorage`, which is used by
-SessionTracker to persist/read sessions data.
+SessionTracker framework supports session tracking auto-restoration on application process restarts. Your
+app must provide an implementation of `ISessionTrackerStorage`, which is used by SessionTracker to make CRUD 
+operations on session tracking records.
 
-### Session states and events
+### Session tracking state machine
 
 SessionTracker maintains a state machine per session. Your app must define a set of possible events and
-states per session. Using events and states your app should provide state machine transitions, which are
-used to configure session state machine. For example, your app may define the following session events and states:
+states per session. Using events and states, your app should provide state machine transitions, which are
+used to configure session state machine. For example, your app may define the following session tracking 
+events and states:
 
 ```kotlin
-class Session(override val sessionId: String) : ISession {
-    enum class State {
-        INACTIVE, ACTIVE
-    }
-    enum class Event {
-        LOGIN, LOGOUT
-    }
+enum class State {
+    INACTIVE, ACTIVE
+}
+
+enum class Event {
+    LOGIN, LOGOUT
 }
 ```
 
 then a sample transitions config (an implementation of `ISessionStateTransitionsSupplier`) could be as following:
 
 ```kotlin
-val sessionStateTransitionsSupplier =
-        object : ISessionStateTransitionsSupplier<Session, Session.Event, Session.State> {
+val sessionStateTransitionsSupplier = object : ISessionStateTransitionsSupplier<Event, State> {
     override fun getStateTransitions(session: Session) = listOf(
         Transition(
-            event = Session.Event.LOGIN,
-            statePath = listOf(Session.State.INACTIVE, Session.State.ACTIVE)
+            event = Event.LOGIN,
+            statePath = listOf(State.INACTIVE, State.ACTIVE)
         ),
         Transition(
-            event = Session.Event.LOGOUT,
-            statePath = listOf(Session.State.ACTIVE, Session.State.INACTIVE)
+            event = Event.LOGOUT,
+            statePath = listOf(State.ACTIVE, State.INACTIVE)
         )
     )
 }
 ```
 
-Such config would mean there are two possible session states (`ACTIVE`/`INACTIVE`) and two possible events: `LOGIN`
-(to move session from `INACTIVE` to `ACTIVE` state) and `LOGOUT` (to move session from `ACTIVE` to `INACTIVE` state).
+Such config would mean there are two possible session tracking states (`ACTIVE`/`INACTIVE`) and two possible 
+session tracking events: `LOGIN` (to move session from `INACTIVE` to `ACTIVE` state) and `LOGOUT` (to move 
+session from `ACTIVE` to `INACTIVE` state).
 
 ### Session tracking
 
 In order to make SessionTracker ready to function it should be initialized first. The most appropriate place for
 `initialize()` call is `android.app.Application.onCreate()`.
 
-Suppose your user hits "Login" button, your app authenticates user and creates a Session object. In order to make
+Suppose your user hits "Login" button, your app authenticates user and creates a session. In order to make
 use of SessionTracker the session should be "attached" to SessionTracker:
 
 ```kotlin
-sessionTracker.trackSession(session, Session.State.ACTIVE)
+sessionTracker.trackSession(sessionId, State.ACTIVE)
 ```
 
-Now SessionTracker is tracking the session until your app calls `sessionTracker.untrackSession(sessionId)`.
-Next time your app starts (and SessionTracker is initialized), the session will be automatically tracked by
-SessionTracker with the same `ACTIVE` state.
+Now SessionTracker is tracking the session until your app calls `untrackSession(sessionId)`. Next time 
+your app starts (and SessionTracker is initialized), the session tracking will be automatically restored
+by SessionTracker with the same `ACTIVE` state.
 
-As long as session is tracked, its state changes are propagated to your app via `SessionTracker.Listener`.
+As long as session is tracked, its session tracking state changes are propagated to your app via `SessionTracker.Listener`.
 
 Suppose eventually your user hits "Log Out" button, then your app is responsible to communicate this event
 to SessionTracker by asking to consume `LOGOUT` event for the session:
 
 ```kotlin
-sessionTracker.consumeEvent(session.sessionId, Session.Event.LOGOUT)
+sessionTracker.consumeEvent(sessionId, Event.LOGOUT)
 ```
 
-Now SessionTracker updates session state to `INACTIVE`, propagates this state change via
-`SessionTracker.Listener` and persists session with its new state . Note, the session is still tracked 
-by SessionTracker, so next time your app starts, the session will be automatically picked up for
-tracking by SessionTracker with the same `INACTIVE` state.
+Now SessionTracker updates session tracking state to `INACTIVE`, persists session record with the new state and
+propagates this state change via `SessionTracker.Listener`. Note, the session is still tracked by SessionTracker,
+so next time your app starts, the session tracking will be automatically restored by SessionTracker with 
+the same `INACTIVE` state.
 
 ### Management of session resources
 
 `SessionTracker.Listener` has useful for your app callbacks that allow to manage session resources appropriately:
 
-- `onSessionTrackingStarted(sessionTracker: SessionTracker<S, Event, State>, session: S, initState: State)`
+- `onSessionTrackingStarted(sessionTracker: SessionTracker<Event, State>, sessionRecord: SessionRecord<State>)`
 
     SessionTracker has added session to the list of tracked sessions.
-    This happens as a result of calling `SessionTracker.trackSession(session, state)` or `SessionTracker.initialize()`.
-    This callback is the right place to create any resources for the session (a DB connection, a DI scope, etc.)
-    depending on the initState.
+    This happens as a result of calling `SessionTracker.trackSession(sessionId, state)` or `SessionTracker.initialize()`.
+    This callback is the right place to create any resources for the session (a DB connection, a DI scope, etc.).
 
-- `onSessionStateChanged(sessionTracker: SessionTracker<S, Event, State>, session: S, oldState: State, newState: State)`
+- `onSessionStateChanged(sessionTracker: SessionTracker<Event, State>, sessionRecord: SessionRecord<State>, oldState: State)`
 
-    Session state has changed.
+    Session tracking state has changed.
     This happens as a result of calling `SessionTracker.consumeEvent(sessionId, event)`.
     This callback is the right place to create or release any resources for the session (a DB connection,
     a DI scope, etc.).
 
-- `onSessionTrackingStopped(sessionTracker: SessionTracker<S, Event, State>, session: S, state: State)`
+- `onSessionTrackingStopped(sessionTracker: SessionTracker<Event, State>, sessionRecord: SessionRecord<State>)`
 
     SessionTracker has removed session from the list of tracked sessions. This happens as a result
     of calling `SessionTracker.untrackSession(sessionId)`.
@@ -131,9 +146,9 @@ tracking by SessionTracker with the same `INACTIVE` state.
     the `autoUntrackStates` (a `SessionTracker` constructor parameter).
     This callback is the right place to release any resources for the session (a DB connection, a DI scope, etc.).
 
-- `onAllSessionsTrackingStopped(sessionTracker: SessionTracker<S, Event, State>, sessionsData: List<Pair<S, State>>)`
+- `onAllSessionsTrackingStopped(sessionTracker: SessionTracker<Event, State>, sessionRecords: List<SessionRecord<State>>)`
 
-    SessionTracker has removed session from the list of tracked sessions. This happens as a result
+    SessionTracker has removed all sessions from the list of tracked sessions. This happens as a result
     of calling `SessionTracker.untrackAllSessions()`.
     This callback is the right place to release any resources for the sessions (a DB connection, a DI scope, etc.).
 

@@ -2,11 +2,7 @@ package com.chumarin.stanislav.sample_app_dagger;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.chumarin.stanislav.sample_app_dagger.util.BaseViewModel;
-
-import java.util.concurrent.TimeUnit;
-
 import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -15,12 +11,14 @@ import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.BehaviorSubject;
 import vit.khudenko.android.sessiontracker.SessionTracker;
 
+import java.util.concurrent.TimeUnit;
+
 public class MainViewModel extends BaseViewModel {
 
     @NonNull
     private final String sessionId;
     @NonNull
-    private final SessionTracker<Session, Session.Event, Session.State> sessionTracker;
+    private final SessionTracker<Session.Event, Session.State> sessionTracker;
 
     @NonNull
     private final BehaviorSubject<State> state = BehaviorSubject.createDefault(State.Idle.INSTANCE);
@@ -29,7 +27,7 @@ public class MainViewModel extends BaseViewModel {
     private Disposable disposable;
 
     public MainViewModel(@NonNull String sessionId,
-                         @NonNull SessionTracker<Session, Session.Event, Session.State> sessionTracker) {
+                         @NonNull SessionTracker<Session.Event, Session.State> sessionTracker) {
         this.sessionId = sessionId;
         this.sessionTracker = sessionTracker;
     }
