@@ -1,8 +1,9 @@
 package vit.khudenko.android.sessiontracker
 
 /**
- * A structure to transfer data between [`SessionTracker`][SessionTracker] and client persisting layer.
+ * A representation of a session tracked by [`SessionTracker`][SessionTracker].
  *
+ * @see SessionTracker.Listener
  * @see ISessionTrackerStorage
  */
 data class SessionRecord<State : Enum<State>>(
