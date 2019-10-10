@@ -522,7 +522,48 @@ class SessionTrackerRelaxedModeTest {
     }
 
     @Test
-    fun `if event is ignored then listeners should not be notified and sessions state should not be persisted`() {
+    fun `consumeEvent() in verbose mode`() {
+        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
+        val sessionRecords = listOf(sessionRecord1, sessionRecord2)
+
+        storage = createStorageMock(sessionRecords)
+
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
+            autoUntrackStates = emptySet(),
+            mode = modeVerbose,
+            logger = logger
+        )
+
+        verifyInitialization(sessionTracker, sessionRecords, logger, storage, listener, modeVerbose)
+
+        assertTrue(sessionTracker.consumeEvent(sessionRecord1.sessionId, Event.LOGOUT))
+
+        val updatedSessionRecord1 = sessionRecord1.copy(state = State.INACTIVE)
+
+        with(inOrder(storage, listener, logger)) {
+            verify(logger).d(
+                SessionTracker.TAG,
+                "consumeEvent: sessionId = '${sessionRecord1.sessionId}', event = '${Event.LOGOUT}'"
+            )
+            verify(logger).d(
+                SessionTracker.TAG,
+                "onStateChanged: '${sessionRecord1.state}' -> '${updatedSessionRecord1.state}', sessionId = '${sessionRecord1.sessionId}'"
+            )
+            verify(storage).updateSessionRecord(updatedSessionRecord1)
+            verify(listener).onSessionStateChanged(sessionTracker, updatedSessionRecord1, sessionRecord1.state)
+        }
+
+        verifyNoMoreInteractions(storage, listener, logger)
+
+        assertEquals(listOf(updatedSessionRecord1, sessionRecord2), sessionTracker.getSessionRecords())
+    }
+
+    @Test
+    fun `if event is ignored, then listeners should not be notified and sessions state should not be persisted`() {
         val sessionRecord = SessionRecord("session_id", State.ACTIVE)
 
         storage = createStorageMock(listOf(sessionRecord))
@@ -542,6 +583,44 @@ class SessionTrackerRelaxedModeTest {
         assertFalse(sessionTracker.consumeEvent(sessionRecord.sessionId, Event.LOGIN))
 
         verifyZeroInteractions(storage, listener)
+
+        assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
+    }
+
+    @Test
+    fun `if event is ignored, then listeners should not be notified and sessions state should not be persisted, in verbose mode`() {
+        val sessionRecord = SessionRecord("session_id", State.ACTIVE)
+
+        storage = createStorageMock(listOf(sessionRecord))
+
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
+            autoUntrackStates = emptySet(),
+            mode = modeVerbose,
+            logger = logger
+        )
+
+        verifyInitialization(sessionTracker, listOf(sessionRecord), logger, storage, listener, modeVerbose)
+
+        // LOGIN event will be ignored, since current state is ACTIVE
+        assertFalse(sessionTracker.consumeEvent(sessionRecord.sessionId, Event.LOGIN))
+
+        with(inOrder(logger)) {
+            verify(logger).d(
+                SessionTracker.TAG,
+                "consumeEvent: sessionId = '${sessionRecord.sessionId}', event = '${Event.LOGIN}'"
+            )
+            verify(logger).d(
+                SessionTracker.TAG,
+                "consumeEvent: event '${Event.LOGIN}' was ignored for session with ID '${sessionRecord.sessionId}' " +
+                        "in state ${sessionRecord.state}, isUntracking = false"
+            )
+        }
+
+        verifyZeroInteractions(storage, listener)
+        verifyNoMoreInteractions(logger)
 
         assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
     }
