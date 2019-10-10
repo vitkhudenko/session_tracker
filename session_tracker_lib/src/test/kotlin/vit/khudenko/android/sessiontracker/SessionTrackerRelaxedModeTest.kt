@@ -409,6 +409,86 @@ class SessionTrackerRelaxedModeTest {
     }
 
     @Test
+    fun `untrackAllSessions() in verbose mode`() {
+        val sessionRecords = listOf(
+            SessionRecord("session_id_1", State.ACTIVE),
+            SessionRecord("session_id_2", State.INACTIVE)
+        )
+
+        storage = createStorageMock(sessionRecords)
+
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
+            autoUntrackStates = emptySet(),
+            mode = modeVerbose,
+            logger = logger
+        )
+
+        verifyInitialization(sessionTracker, sessionRecords, logger, storage, listener, modeVerbose)
+
+        sessionTracker.untrackAllSessions()
+
+        with(inOrder(storage, listener, logger)) {
+            verify(logger).d(SessionTracker.TAG, "untrackAllSessions")
+            verify(storage).deleteAllSessionRecords()
+            verify(listener).onAllSessionsTrackingStopped(sessionTracker, sessionRecords)
+        }
+
+        verifyNoMoreInteractions(storage, listener, logger)
+
+        assertTrue(sessionTracker.getSessionRecords().isEmpty())
+    }
+
+    @Test
+    fun `untrackAllSessions() if there are no sessions at all`() {
+        storage = createStorageMock(emptyList())
+
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
+            autoUntrackStates = emptySet(),
+            mode = mode,
+            logger = logger
+        )
+
+        verifyInitialization(sessionTracker, emptyList(), logger, storage, listener, mode)
+
+        sessionTracker.untrackAllSessions()
+
+        verifyZeroInteractions(storage, listener, logger)
+
+        assertTrue(sessionTracker.getSessionRecords().isEmpty())
+    }
+
+    @Test
+    fun `untrackAllSessions() if there are no sessions at all, in verbose mode`() {
+        storage = createStorageMock(emptyList())
+
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
+            autoUntrackStates = emptySet(),
+            mode = modeVerbose,
+            logger = logger
+        )
+
+        verifyInitialization(sessionTracker, emptyList(), logger, storage, listener, modeVerbose)
+
+        sessionTracker.untrackAllSessions()
+
+        verify(logger).d(SessionTracker.TAG, "untrackAllSessions: no sessions found")
+
+        verifyZeroInteractions(storage, listener)
+        verifyNoMoreInteractions(logger)
+
+        assertTrue(sessionTracker.getSessionRecords().isEmpty())
+    }
+
+    @Test
     fun consumeEvent() {
         val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
         val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
