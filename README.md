@@ -177,6 +177,10 @@ SessionTracker is a synchronous tool, meaning it neither creates threads nor use
 
 Typical simple SessionTracker usage implies being a singleton in your app.
 
+## Test coverage
+
+![JaCoCo report](jacoco_report.png "JaCoCo report")
+
 ## License
 
 > MIT License
