@@ -179,9 +179,9 @@ Typical simple SessionTracker usage implies being a singleton in your app.
 
 ## Test coverage
 
-[Test Summary](session_tracker_lib/reports/tests/testReleaseUnitTest/index.html)
+[Test Summary][test_summary]
 
-[Test Coverage report](session_tracker_lib/reports/jacoco/jacocoUnitTestReport/html/index.html)
+[Test Coverage report][test_coverage]
 
 
 ## License
@@ -212,3 +212,6 @@ Typical simple SessionTracker usage implies being a singleton in your app.
 [sample_app_koin]: https://github.com/vitkhudenko/session_tracker/tree/master/sample_app_koin
 [dagger]: https://github.com/google/dagger
 [sample_app_dagger]: https://github.com/vitkhudenko/session_tracker/tree/master/sample_app_dagger
+
+[test_summary]: https://htmlpreview.github.io/?https://github.com/vitkhudenko/session_tracker/blob/master/session_tracker_lib/reports/tests/testReleaseUnitTest/index.html
+[test_coverage]: https://htmlpreview.github.io/?https://github.com/vitkhudenko/session_tracker/blob/master/session_tracker_lib/reports/jacoco/jacocoUnitTestReport/html/index.html
