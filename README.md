@@ -179,7 +179,10 @@ Typical simple SessionTracker usage implies being a singleton in your app.
 
 ## Test coverage
 
-![JaCoCo report](jacoco_report.png "JaCoCo report")
+[Test Summary](session_tracker_lib/reports/tests/testReleaseUnitTest/index.html)
+
+[Test Coverage report](session_tracker_lib/reports/jacoco/jacocoUnitTestReport/html/index.html)
+
 
 ## License
 
