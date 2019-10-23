@@ -649,8 +649,10 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
         val builder = StateMachine.Builder<Event, State>().setInitialState(state)
 
         sessionStateTransitionsSupplier.getStateTransitions(sessionId)
-            .forEach { (event, statePath) ->
-                builder.addTransition(event, statePath)
+            .forEach { transition ->
+                builder.addTransition(
+                    StateMachine.Transition(transition.event, transition.statePath)
+                )
             }
 
         val stateMachine = builder.build()

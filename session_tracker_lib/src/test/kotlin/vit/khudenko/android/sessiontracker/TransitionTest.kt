@@ -13,7 +13,7 @@ class TransitionTest {
 
         val transition = Transition(
             event,
-            emptyList<State>()
+            listOf(State.INACTIVE, State.ACTIVE)
         )
 
         assertSame(event, transition.event)

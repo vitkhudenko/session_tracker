@@ -684,7 +684,8 @@ class SessionTrackerStrictModeTest {
         storage = createStorageMock(sessionRecords)
         sessionStateTransitionsSupplier = mock {
             on { getStateTransitions(any()) } doReturn listOf(
-                Transition(Event.LOGOUT, listOf(State.ACTIVE, State.FORGOTTEN, State.INACTIVE))
+                Transition(Event.LOGOUT, listOf(State.ACTIVE, State.FORGOTTEN, State.INACTIVE)),
+                Transition(Event.LOGIN, listOf(State.INACTIVE, State.ACTIVE))
             )
         }
 
@@ -731,7 +732,8 @@ class SessionTrackerStrictModeTest {
         }
         sessionStateTransitionsSupplier = mock {
             on { getStateTransitions(any()) } doReturn listOf(
-                Transition(Event.LOGOUT, listOf(State.ACTIVE, State.FORGOTTEN, State.INACTIVE))
+                Transition(Event.LOGOUT, listOf(State.ACTIVE, State.FORGOTTEN, State.INACTIVE)),
+                Transition(Event.LOGIN, listOf(State.INACTIVE, State.ACTIVE))
             )
         }
 
@@ -785,7 +787,8 @@ class SessionTrackerStrictModeTest {
         }
         sessionStateTransitionsSupplier = mock {
             on { getStateTransitions(any()) } doReturn listOf(
-                Transition(Event.LOGOUT, listOf(State.ACTIVE, State.FORGOTTEN, State.INACTIVE))
+                Transition(Event.LOGOUT, listOf(State.ACTIVE, State.FORGOTTEN, State.INACTIVE)),
+                Transition(Event.LOGIN, listOf(State.INACTIVE, State.ACTIVE))
             )
         }
 
