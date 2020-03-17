@@ -1,17 +1,28 @@
 package vit.khudenko.android.sessiontracker
 
-import com.nhaarman.mockitokotlin2.*
-import org.junit.Assert.*
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.doAnswer
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.inOrder
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.reset
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
+import com.nhaarman.mockitokotlin2.verifyZeroInteractions
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.ExpectedException
-import vit.khudenko.android.sessiontracker.test_util.*
+import vit.khudenko.android.sessiontracker.test_util.Event
+import vit.khudenko.android.sessiontracker.test_util.State
+import vit.khudenko.android.sessiontracker.test_util.assertThrows
+import vit.khudenko.android.sessiontracker.test_util.createSessionStateTransitionsSupplierMock
+import vit.khudenko.android.sessiontracker.test_util.createStorageMock
+import vit.khudenko.android.sessiontracker.test_util.verifyInitialization
 
 class SessionTrackerStrictModeTest {
-
-    @get:Rule
-    val expectedExceptionRule: ExpectedException = ExpectedException.none()
 
     private val mode = SessionTracker.Mode.STRICT
     private val modeVerbose = SessionTracker.Mode.STRICT_VERBOSE
@@ -67,11 +78,6 @@ class SessionTrackerStrictModeTest {
     fun `initialization with session in a auto-untrack state`() {
         val sessionId = "session_id"
 
-        expectedExceptionRule.expect(RuntimeException::class.java)
-        expectedExceptionRule.expectMessage(
-            "Unable to initialize SessionTracker: session with ID '${sessionId}' is in auto-untrack state (${State.FORGOTTEN})"
-        )
-
         storage = createStorageMock(listOf(SessionRecord(sessionId, State.FORGOTTEN)))
 
         val sessionTracker = SessionTracker(
@@ -83,23 +89,20 @@ class SessionTrackerStrictModeTest {
             logger = logger
         )
 
-        try {
+        assertThrows(
+            RuntimeException::class.java,
+            "Unable to initialize SessionTracker: session with ID '${sessionId}' is in auto-untrack state (${State.FORGOTTEN})"
+        ) {
             sessionTracker.initialize()
-        } catch (e: Exception) {
-            verify(storage).readAllSessionRecords()
-            verifyNoMoreInteractions(storage)
-            verifyZeroInteractions(listener)
-            throw e
         }
+
+        verify(storage).readAllSessionRecords()
+        verifyNoMoreInteractions(storage)
+        verifyZeroInteractions(listener)
     }
 
     @Test
     fun `initialization without state transitions fails on state machine's builder validation`() {
-        expectedExceptionRule.expect(RuntimeException::class.java)
-        expectedExceptionRule.expectMessage(
-            "Unable to initialize SessionTracker: error creating StateMachine"
-        )
-
         storage = createStorageMock(listOf(SessionRecord("session_id", State.ACTIVE)))
         sessionStateTransitionsSupplier = mock {
             on { getStateTransitions(any()) } doReturn emptyList() // incomplete config
@@ -114,14 +117,13 @@ class SessionTrackerStrictModeTest {
             logger = logger
         )
 
-        try {
+        assertThrows(RuntimeException::class.java, "Unable to initialize SessionTracker: error creating StateMachine") {
             sessionTracker.initialize()
-        } catch (e: Exception) {
-            verify(storage).readAllSessionRecords()
-            verifyNoMoreInteractions(storage)
-            verifyZeroInteractions(listener)
-            throw e
         }
+
+        verify(storage).readAllSessionRecords()
+        verifyNoMoreInteractions(storage)
+        verifyZeroInteractions(listener)
     }
 
     @Test
@@ -209,11 +211,6 @@ class SessionTrackerStrictModeTest {
 
     @Test
     fun `trackSession() with session in an auto-untrack state`() {
-        expectedExceptionRule.expect(RuntimeException::class.java)
-        expectedExceptionRule.expectMessage(
-            "Unable to track session: session with ID 'session_id' is in auto-untrack state (FORGOTTEN)"
-        )
-
         val sessionId = "session_id"
         val state = State.FORGOTTEN
 
@@ -228,17 +225,18 @@ class SessionTrackerStrictModeTest {
 
         sessionTracker.initialize()
 
-        try {
+        assertThrows(
+            RuntimeException::class.java,
+            "Unable to track session: session with ID 'session_id' is in auto-untrack state (FORGOTTEN)"
+        ) {
             sessionTracker.trackSession(sessionId, state)
-        } catch (e: Exception) {
-            verify(storage).readAllSessionRecords()
-            verifyNoMoreInteractions(storage)
-            verifyZeroInteractions(listener)
-
-            assertTrue(sessionTracker.getSessionRecords().isEmpty())
-
-            throw e
         }
+
+        verify(storage).readAllSessionRecords()
+        verifyNoMoreInteractions(storage)
+        verifyZeroInteractions(listener)
+
+        assertTrue(sessionTracker.getSessionRecords().isEmpty())
     }
 
     @Test
@@ -273,9 +271,6 @@ class SessionTrackerStrictModeTest {
 
     @Test
     fun `trackSession() without state transitions fails on state machine's builder validation`() {
-        expectedExceptionRule.expect(RuntimeException::class.java)
-        expectedExceptionRule.expectMessage("SessionTracker failed to track session: error creating StateMachine")
-
         sessionStateTransitionsSupplier = mock {
             on { getStateTransitions(any()) } doReturn emptyList() // incomplete config
         }
@@ -291,14 +286,12 @@ class SessionTrackerStrictModeTest {
 
         verifyInitialization(sessionTracker, emptyList(), logger, storage, listener, mode)
 
-        try {
+        assertThrows(RuntimeException::class.java, "SessionTracker failed to track session: error creating StateMachine") {
             sessionTracker.trackSession("session_id", State.ACTIVE)
-        } catch (e: Exception) {
-            verifyZeroInteractions(storage, listener)
-            assertTrue(sessionTracker.getSessionRecords().isEmpty())
-
-            throw e
         }
+
+        verifyZeroInteractions(storage, listener)
+        assertTrue(sessionTracker.getSessionRecords().isEmpty())
     }
 
     @Test

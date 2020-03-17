@@ -3,16 +3,12 @@ package vit.khudenko.android.sessiontracker
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.ExpectedException
 import vit.khudenko.android.sessiontracker.test_util.Event
 import vit.khudenko.android.sessiontracker.test_util.State
+import vit.khudenko.android.sessiontracker.test_util.assertThrows
 
 class UninitializedSessionTrackerStrictModeTest {
-
-    @get:Rule
-    val expectedExceptionRule: ExpectedException = ExpectedException.none()
 
     private val mode = SessionTracker.Mode.STRICT
 
@@ -68,14 +64,9 @@ class UninitializedSessionTrackerStrictModeTest {
         methodName: String,
         sessionTrackerAction: () -> Unit
     ) {
-        expectedExceptionRule.expect(RuntimeException::class.java)
-        expectedExceptionRule.expectMessage("SessionTracker must be initialized before calling its #$methodName method")
-
-        try {
+        assertThrows(RuntimeException::class.java, "SessionTracker must be initialized before calling its #$methodName method") {
             sessionTrackerAction.invoke()
-        } catch (e: Exception) {
-            verifyZeroInteractions(storage, listener, sessionStateTransitionsSupplier)
-            throw e
         }
+        verifyZeroInteractions(storage, listener, sessionStateTransitionsSupplier)
     }
 }

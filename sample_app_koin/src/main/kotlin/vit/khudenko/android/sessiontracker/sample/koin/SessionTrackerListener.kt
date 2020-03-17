@@ -78,7 +78,7 @@ class SessionTrackerListener(private val app: Application) : SessionTracker.List
         } else {
             Log.d(TAG, "createKoinScope: session ID = '$sessionId'")
             scope = app.getKoin().createScope(
-                qualifier = named(SCOPE_ID_USER_SESSION), // scopeName
+                qualifier = named(SCOPE_ID_USER_SESSION),
                 scopeId = sessionId
             )
         }

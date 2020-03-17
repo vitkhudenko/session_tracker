@@ -2,7 +2,6 @@ package vit.khudenko.android.sessiontracker
 
 import android.util.Log
 import vit.khudenko.android.fsm.StateMachine
-import java.util.*
 
 /**
  * ## TL;DR

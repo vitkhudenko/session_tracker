@@ -1,17 +1,28 @@
 package vit.khudenko.android.sessiontracker
 
-import com.nhaarman.mockitokotlin2.*
-import org.junit.Assert.*
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.doAnswer
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.inOrder
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.reset
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
+import com.nhaarman.mockitokotlin2.verifyZeroInteractions
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.ExpectedException
-import vit.khudenko.android.sessiontracker.test_util.*
+import vit.khudenko.android.sessiontracker.test_util.Event
+import vit.khudenko.android.sessiontracker.test_util.State
+import vit.khudenko.android.sessiontracker.test_util.assertThrows
+import vit.khudenko.android.sessiontracker.test_util.createSessionStateTransitionsSupplierMock
+import vit.khudenko.android.sessiontracker.test_util.createStorageMock
+import vit.khudenko.android.sessiontracker.test_util.verifyInitialization
 
 class SessionTrackerRelaxedModeTest {
-
-    @get:Rule
-    val expectedExceptionRule: ExpectedException = ExpectedException.none()
 
     private val mode = SessionTracker.Mode.RELAXED
     private val modeVerbose = SessionTracker.Mode.RELAXED_VERBOSE
@@ -94,9 +105,6 @@ class SessionTrackerRelaxedModeTest {
 
     @Test
     fun `initialization without state transitions fails on state machine's builder validation`() {
-        expectedExceptionRule.expect(RuntimeException::class.java)
-        expectedExceptionRule.expectMessage("Unable to initialize SessionTracker: error creating StateMachine")
-
         storage = createStorageMock(listOf(SessionRecord("session_id", State.ACTIVE)))
 
         val sessionTracker = SessionTracker(
@@ -110,15 +118,13 @@ class SessionTrackerRelaxedModeTest {
             logger = logger
         )
 
-        try {
+        assertThrows(RuntimeException::class.java, "Unable to initialize SessionTracker: error creating StateMachine") {
             sessionTracker.initialize()
-        } catch (e: Exception) {
-            verify(storage).readAllSessionRecords()
-            verifyNoMoreInteractions(storage)
-            verifyZeroInteractions(listener)
-
-            throw e
         }
+
+        verify(storage).readAllSessionRecords()
+        verifyNoMoreInteractions(storage)
+        verifyZeroInteractions(listener)
     }
 
     @Test
@@ -262,9 +268,6 @@ class SessionTrackerRelaxedModeTest {
 
     @Test
     fun `trackSession() without state transitions fails on state machine's builder validation`() {
-        expectedExceptionRule.expect(RuntimeException::class.java)
-        expectedExceptionRule.expectMessage("SessionTracker failed to track session: error creating StateMachine")
-
         sessionStateTransitionsSupplier = mock {
             on { getStateTransitions(any()) } doReturn emptyList() // incomplete config
         }
@@ -280,14 +283,12 @@ class SessionTrackerRelaxedModeTest {
 
         verifyInitialization(sessionTracker, emptyList(), logger, storage, listener, mode)
 
-        try {
+        assertThrows(RuntimeException::class.java, "SessionTracker failed to track session: error creating StateMachine") {
             sessionTracker.trackSession("session_id", State.ACTIVE)
-        } catch (e: Exception) {
-            verifyZeroInteractions(storage, listener)
-            assertTrue(sessionTracker.getSessionRecords().isEmpty())
-
-            throw e
         }
+
+        verifyZeroInteractions(storage, listener)
+        assertTrue(sessionTracker.getSessionRecords().isEmpty())
     }
 
     @Test

@@ -21,7 +21,7 @@ allprojects {
 At a module level `build.gradle`, add the following dependency:
 
 ```groovy
-implementation 'vit.khudenko.android:sessiontracker:0.3.2'
+implementation 'vit.khudenko.android:sessiontracker:0.3.3'
 ```
 
 ## Contract description

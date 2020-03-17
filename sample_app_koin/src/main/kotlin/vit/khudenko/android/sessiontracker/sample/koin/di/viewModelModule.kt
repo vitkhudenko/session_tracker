@@ -12,7 +12,7 @@ val viewModelModule = module {
         LoginViewModel(get())
     }
 
-    scope(scopeName = named(SCOPE_ID_USER_SESSION)) {
+    scope(qualifier = named(SCOPE_ID_USER_SESSION)) {
         viewModel {
             MainViewModel(get())
         }

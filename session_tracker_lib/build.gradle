@@ -9,7 +9,7 @@ afterEvaluate {
     generateReleaseBuildConfig.enabled = false
 }
 
-def libraryVersionName = '0.3.2'
+def libraryVersionName = '0.3.3'
 def artifactName = 'SessionTracker'
 
 android {
@@ -20,7 +20,7 @@ android {
     }
 
     compileSdkVersion 29
-    buildToolsVersion "29.0.2"
+    buildToolsVersion "29.0.3"
 
     defaultConfig {
         minSdkVersion 15
@@ -77,11 +77,11 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation 'vit.khudenko.android:fsm:0.2.0'
+    implementation 'vit.khudenko.android:fsm:0.3.0'
 
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'org.mockito:mockito-core:2.28.2'
-    testImplementation 'com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0'
+    testImplementation 'junit:junit:4.13'
+    testImplementation 'org.mockito:mockito-core:3.1.0'
+    testImplementation 'com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0'
     testImplementation 'io.mockk:mockk:1.9.3'
 }
 

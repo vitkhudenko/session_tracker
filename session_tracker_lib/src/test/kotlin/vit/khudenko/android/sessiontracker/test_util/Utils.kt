@@ -1,9 +1,25 @@
 package vit.khudenko.android.sessiontracker.test_util
 
-import com.nhaarman.mockitokotlin2.*
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.argThat
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.inOrder
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.reset
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
+import com.nhaarman.mockitokotlin2.verifyZeroInteractions
+import org.junit.Assert
 import org.junit.Assert.assertEquals
-import vit.khudenko.android.sessiontracker.*
-import java.util.*
+import org.junit.Assert.assertTrue
+import org.mockito.ArgumentMatcher
+import vit.khudenko.android.sessiontracker.ISessionStateTransitionsSupplier
+import vit.khudenko.android.sessiontracker.ISessionTrackerStorage
+import vit.khudenko.android.sessiontracker.SessionRecord
+import vit.khudenko.android.sessiontracker.SessionTracker
+import vit.khudenko.android.sessiontracker.Transition
+import java.util.Collections
 
 fun createSessionStateTransitionsSupplierMock() = mock<ISessionStateTransitionsSupplier<Event, State>> {
     on { getStateTransitions(any()) } doReturn listOf(
@@ -72,4 +88,22 @@ fun verifyInitialization(
     }
 
     reset(listener, storage, logger)
+}
+
+fun <T : Throwable> assertThrows(
+    expectedThrowable: Class<T>,
+    expectedThrowableMessage: String,
+    action: () -> Unit
+): T {
+    return assertThrows(expectedThrowable, equals(expectedThrowableMessage), action)
+}
+
+fun <T : Throwable> assertThrows(
+    expectedThrowable: Class<T>,
+    expectedThrowableMessageMatcher: ArgumentMatcher<String>,
+    action: () -> Unit
+): T {
+    val actualThrowable = Assert.assertThrows(null, expectedThrowable) { action.invoke() }
+    assertTrue("unexpected throwable message", expectedThrowableMessageMatcher.matches(actualThrowable.message))
+    return actualThrowable
 }

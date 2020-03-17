@@ -10,10 +10,9 @@ import vit.khudenko.android.fsm.StateMachine
  * @param event [`Event`][Event] - triggering event for this transition.
  * @param statePath a list of states for this transition.
  *                  First item is a starting state for the transition.
- *                  Must have at least two items, and all items must be unique.
+ *                  Must have at least two items. Must not have repeating items in a row.
  *
- * @throws [IllegalArgumentException] if statePath is empty or has a single item
- * @throws [IllegalArgumentException] if statePath does not consist of unique items
+ * @throws [IllegalArgumentException] if statePath has less than 2 items OR has repeating items in a row
  *
  * @param [Event] event parameter of enum type.
  * @param [State] state parameter of enum type.

@@ -14,7 +14,12 @@ import vit.khudenko.android.sessiontracker.SessionRecord;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.stream.Collectors;
 
 @Singleton

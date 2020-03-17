@@ -10,21 +10,20 @@ import vit.khudenko.android.fsm.StateMachine
  * @param event [`Event`][Event] - triggering event for this transition.
  * @param statePath a list of states for this transition.
  *                  First item is a starting state for the transition.
- *                  Must have at least two items, and all items must be unique.
+ *                  Must have at least two items. Must not have repeating items in a row.
  *
- * @throws [IllegalArgumentException] if statePath is empty or has a single item
- * @throws [IllegalArgumentException] if statePath does not consist of unique items
+ * @throws [IllegalArgumentException] if statePath has less than 2 items OR has repeating items in a row
  *
  * @param [Event] event parameter of enum type.
  * @param [State] state parameter of enum type.
  */
-<span class="fc" id="L21">class Transition&lt;Event : Enum&lt;Event&gt;, State : Enum&lt;State&gt;&gt;(</span>
-<span class="fc" id="L22">    val event: Event,</span>
-<span class="fc" id="L23">    val statePath: List&lt;State&gt;</span>
+<span class="fc" id="L20">class Transition&lt;Event : Enum&lt;Event&gt;, State : Enum&lt;State&gt;&gt;(</span>
+<span class="fc" id="L21">    val event: Event,</span>
+<span class="fc" id="L22">    val statePath: List&lt;State&gt;</span>
 ) {
     init {
         // trigger validation
-<span class="fc" id="L27">        StateMachine.Transition(event, statePath)</span>
-<span class="fc" id="L28">    }</span>
+<span class="fc" id="L26">        StateMachine.Transition(event, statePath)</span>
+<span class="fc" id="L27">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>
