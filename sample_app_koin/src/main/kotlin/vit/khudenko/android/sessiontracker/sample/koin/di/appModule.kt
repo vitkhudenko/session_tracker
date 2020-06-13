@@ -16,13 +16,13 @@ import vit.khudenko.android.sessiontracker.sample.koin.SessionTrackerStorage
 
 val appModule = module {
 
-    single(named(DI_NAME_SESSION_SHARED_PREFERENCES)) {
-        androidContext().getSharedPreferences("session", Context.MODE_PRIVATE)
+    single(named(DI_NAME_SESSION_TRACKER_SHARED_PREFERENCES)) {
+        androidContext().getSharedPreferences("session_tracker_storage", Context.MODE_PRIVATE)
     }
 
     single {
         SessionTracker(
-            sessionTrackerStorage = SessionTrackerStorage(androidApplication()),
+            sessionTrackerStorage = SessionTrackerStorage(get(named(DI_NAME_SESSION_TRACKER_SHARED_PREFERENCES))),
             sessionStateTransitionsSupplier = object : ISessionStateTransitionsSupplier<Event, State> {
                 override fun getStateTransitions(sessionId: SessionId) = listOf(
                     Transition(event = Event.LOGIN, statePath = listOf(State.INACTIVE, State.ACTIVE)),

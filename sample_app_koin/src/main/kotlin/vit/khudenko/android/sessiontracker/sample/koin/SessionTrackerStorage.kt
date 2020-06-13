@@ -2,18 +2,15 @@ package vit.khudenko.android.sessiontracker.sample.koin
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.content.Context
 import android.content.SharedPreferences
 import org.json.JSONArray
 import org.json.JSONObject
 import vit.khudenko.android.sessiontracker.ISessionTrackerStorage
 import vit.khudenko.android.sessiontracker.SessionRecord
 
-class SessionTrackerStorage(appContext: Application) : ISessionTrackerStorage<Session.State> {
-    private val prefs: SharedPreferences = appContext.getSharedPreferences(PREFS_FILENAME, Context.MODE_PRIVATE)
+class SessionTrackerStorage(private val prefs: SharedPreferences) : ISessionTrackerStorage<Session.State> {
 
     companion object {
-        const val PREFS_FILENAME = "session_tracker_storage"
         private const val KEY_SESSION_RECORDS = "session_records"
         private const val KEY_SESSION_ID = "id"
         private const val KEY_SESSION_STATE = "state"
