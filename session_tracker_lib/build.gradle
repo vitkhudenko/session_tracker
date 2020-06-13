@@ -4,15 +4,14 @@ apply plugin: 'maven-publish'
 apply plugin: 'kotlin-android'
 apply plugin: 'jacoco'
 
-// https://issuetracker.google.com/issues/72050365
-afterEvaluate {
-    generateReleaseBuildConfig.enabled = false
-}
-
 def libraryVersionName = '0.3.3'
 def artifactName = 'SessionTracker'
 
 android {
+
+    buildFeatures {
+        buildConfig = false
+    }
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
@@ -82,7 +81,7 @@ dependencies {
     testImplementation 'junit:junit:4.13'
     testImplementation 'org.mockito:mockito-core:3.1.0'
     testImplementation 'com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0'
-    testImplementation 'io.mockk:mockk:1.9.3'
+    testImplementation 'io.mockk:mockk:1.10.0'
 }
 
 def bintrayPropertiesFile = rootProject.file('bintray.properties')
