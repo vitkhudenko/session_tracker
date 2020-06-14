@@ -34,7 +34,8 @@ class AppModule {
                     add(Session.State.FORGOTTEN);
                 }},
                 SessionTracker.Mode.STRICT_VERBOSE,
-                new SessionTracker.Logger.DefaultImpl()
+                new SessionTracker.Logger.DefaultImpl(),
+                "SessionTracker"
         );
     }
 
