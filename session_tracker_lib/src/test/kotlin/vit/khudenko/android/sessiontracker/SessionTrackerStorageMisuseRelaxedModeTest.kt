@@ -68,8 +68,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).updateSessionRecord(updatedSessionRecord1)
             verifyStorageMisuseErrorLogged(logger, "consumeEvent")
             verify(listener).onSessionStateChanged(sessionTracker, updatedSessionRecord1, sessionRecord1.state)
@@ -100,7 +99,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord))
             verify(storage).updateSessionRecord(updatedSessionRecord)
             verifyStorageMisuseErrorLogged(logger, "trackSession")
             verify(listener).onSessionStateChanged(sessionTracker, updatedSessionRecord, sessionRecord.state)
@@ -130,7 +129,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord))
             verify(storage).updateSessionRecord(updatedSessionRecord)
             verifyStorageMisuseErrorLogged(logger, "untrackSession")
             verify(listener).onSessionStateChanged(sessionTracker, updatedSessionRecord, sessionRecord.state)
@@ -162,8 +161,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).updateSessionRecord(updatedSessionRecord1)
             verifyStorageMisuseErrorLogged(logger, "untrackAllSessions")
             verify(listener).onSessionStateChanged(sessionTracker, updatedSessionRecord1, sessionRecord1.state)
@@ -193,6 +191,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
+            verify(listener).onSessionTrackerInitialized(sessionTracker, emptyList())
             verify(storage).createSessionRecord(sessionRecord)
             verifyStorageMisuseErrorLogged(logger, "consumeEvent")
             verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
@@ -222,6 +221,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
+            verify(listener).onSessionTrackerInitialized(sessionTracker, emptyList())
             verify(storage).createSessionRecord(sessionRecord)
             verifyStorageMisuseErrorLogged(logger, "trackSession")
             verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
@@ -251,6 +251,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
+            verify(listener).onSessionTrackerInitialized(sessionTracker, emptyList())
             verify(storage).createSessionRecord(sessionRecord)
             verifyStorageMisuseErrorLogged(logger, "untrackSession")
             verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
@@ -280,6 +281,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
+            verify(listener).onSessionTrackerInitialized(sessionTracker, emptyList())
             verify(storage).createSessionRecord(sessionRecord)
             verifyStorageMisuseErrorLogged(logger, "untrackAllSessions")
             verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
@@ -309,8 +311,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).deleteSessionRecord(sessionRecord1.sessionId)
             verifyStorageMisuseErrorLogged(logger, "consumeEvent")
             verify(listener).onSessionTrackingStopped(sessionTracker, sessionRecord1)
@@ -339,7 +340,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord))
             verify(storage).deleteSessionRecord(sessionRecord.sessionId)
             verifyStorageMisuseErrorLogged(logger, "trackSession")
             verify(listener).onSessionTrackingStopped(sessionTracker, sessionRecord)
@@ -369,8 +370,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).deleteSessionRecord(sessionRecord1.sessionId)
             verifyStorageMisuseErrorLogged(logger, "untrackSession")
             verify(listener).onSessionTrackingStopped(sessionTracker, sessionRecord1)
@@ -400,8 +400,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).deleteSessionRecord(sessionRecord1.sessionId)
             verifyStorageMisuseErrorLogged(logger, "untrackAllSessions")
             verify(listener).onSessionTrackingStopped(sessionTracker, sessionRecord1)
@@ -431,8 +430,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).deleteAllSessionRecords()
             verifyStorageMisuseErrorLogged(logger, "consumeEvent")
             verify(listener).onAllSessionsTrackingStopped(sessionTracker, listOf(sessionRecord1, sessionRecord2))
@@ -462,8 +460,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).deleteAllSessionRecords()
             verifyStorageMisuseErrorLogged(logger, "trackSession")
             verify(listener).onAllSessionsTrackingStopped(sessionTracker, listOf(sessionRecord1, sessionRecord2))
@@ -493,8 +490,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).deleteAllSessionRecords()
             verifyStorageMisuseErrorLogged(logger, "untrackSession")
             verify(listener).onAllSessionsTrackingStopped(sessionTracker, listOf(sessionRecord1, sessionRecord2))
@@ -524,8 +520,7 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).deleteAllSessionRecords()
             verifyStorageMisuseErrorLogged(logger, "untrackAllSessions")
             verify(listener).onAllSessionsTrackingStopped(sessionTracker, listOf(sessionRecord1, sessionRecord2))

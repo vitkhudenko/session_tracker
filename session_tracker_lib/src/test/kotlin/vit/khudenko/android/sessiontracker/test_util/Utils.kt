@@ -57,9 +57,7 @@ fun verifyInitialization(
             verify(logger).d(SessionTracker.TAG, "initialize: starting..")
         }
         verify(storage).readAllSessionRecords()
-        sessionRecords.forEach { sessionRecord ->
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
-        }
+        verify(listener).onSessionTrackerInitialized(sessionTracker, sessionRecords)
         if (mode.verbose) {
             verify(logger).d(eq(SessionTracker.TAG), argThat(matches("^initialize: done, took \\d+ ms$")))
         }

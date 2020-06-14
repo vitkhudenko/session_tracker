@@ -1,17 +1,20 @@
 package com.chumarin.stanislav.sample_app_dagger;
 
 import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.chumarin.stanislav.sample_app_dagger.di.UserComponent;
 import com.chumarin.stanislav.sample_app_dagger.di.UserModule;
-import org.jetbrains.annotations.NotNull;
-import vit.khudenko.android.sessiontracker.SessionRecord;
-import vit.khudenko.android.sessiontracker.SessionTracker;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.jetbrains.annotations.NotNull;
+import vit.khudenko.android.sessiontracker.SessionRecord;
+import vit.khudenko.android.sessiontracker.SessionTracker;
 
 public class SessionTrackerListener implements SessionTracker.Listener<Session.Event, Session.State> {
 
@@ -40,6 +43,20 @@ public class SessionTrackerListener implements SessionTracker.Listener<Session.E
         } else {
             Log.d(TAG, "createDaggerScope: session ID = '" + sessionId + "'");
             sessionUserComponents.put(sessionId, app.getAppComponent().attachComponent(new UserModule(sessionId)));
+        }
+    }
+
+    @Override
+    public void onSessionTrackerInitialized(@NotNull SessionTracker<Session.Event, Session.State> sessionTracker,
+                                            @NotNull List<SessionRecord<Session.State>> sessionRecords) {
+        Log.d(TAG, "onSessionTrackerInitialized");
+        if (sessionRecords.stream().filter(sessionRecord -> sessionRecord.getState() == Session.State.ACTIVE).count() > 1) {
+            throw new IllegalStateException("One active session is allowed at most");
+        }
+        for (SessionRecord<Session.State> sessionRecord : sessionRecords) {
+            if (sessionRecord.getState() == Session.State.ACTIVE) {
+                createDaggerScope(sessionRecord.getSessionId());
+            }
         }
     }
 

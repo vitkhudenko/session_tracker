@@ -43,7 +43,7 @@ Note, there are two (partially intersecting) types of session state:
 and which can not be represented by the `SessionRecord`.
 
 Please don't mess one with another. Actual implementation of session, including its persistence, is up to your app
-and is out of SessionTracker framework responsibility. It is correct say that session tracking state (the one
+and is out of SessionTracker framework responsibility. It is correct to say that session tracking state (the one
 tracked by SessionTracker) is a subset of a full session state in your app.
 
 
@@ -125,10 +125,16 @@ the same `INACTIVE` state.
 
 `SessionTracker.Listener` has useful for your app callbacks that allow to manage session resources appropriately:
 
+- `onSessionTrackerInitialized(sessionTracker: SessionTracker<Event, State>, sessionRecords: List<SessionRecord<State>>)`
+
+    SessionTracker has added sessions to the list of tracked sessions.
+    This happens as a result of calling `SessionTracker.initialize()`.
+    This callback is the right place to create any resources for the sessions (a DB connection, a DI scope, etc.).
+
 - `onSessionTrackingStarted(sessionTracker: SessionTracker<Event, State>, sessionRecord: SessionRecord<State>)`
 
     SessionTracker has added session to the list of tracked sessions.
-    This happens as a result of calling `SessionTracker.trackSession(sessionId, state)` or `SessionTracker.initialize()`.
+    This happens as a result of calling `SessionTracker.trackSession(sessionId, state)`.
     This callback is the right place to create any resources for the session (a DB connection, a DI scope, etc.).
 
 - `onSessionStateChanged(sessionTracker: SessionTracker<Event, State>, sessionRecord: SessionRecord<State>, oldState: State)`

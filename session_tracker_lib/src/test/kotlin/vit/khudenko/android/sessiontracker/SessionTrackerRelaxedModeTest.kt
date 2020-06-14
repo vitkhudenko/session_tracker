@@ -99,8 +99,9 @@ class SessionTrackerRelaxedModeTest {
             "initialize: session with ID '${sessionId}' is in auto-untrack state (${State.FORGOTTEN})" +
                     ", rejecting this session"
         )
-        verifyNoMoreInteractions(storage)
-        verifyZeroInteractions(sessionStateTransitionsSupplier, listener)
+        verify(listener).onSessionTrackerInitialized(sessionTracker, emptyList())
+        verifyNoMoreInteractions(storage, listener)
+        verifyZeroInteractions(sessionStateTransitionsSupplier)
     }
 
     @Test
@@ -737,8 +738,7 @@ class SessionTrackerRelaxedModeTest {
 
         with(inOrder(listener, storage)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(listener).onSessionStateChanged(sessionTracker, updatedSessionRecord1, sessionRecord1.state)
             verify(storage).deleteSessionRecord(sessionRecord1.sessionId)
             verify(listener).onSessionTrackingStopped(sessionTracker, updatedSessionRecord1)
@@ -792,8 +792,7 @@ class SessionTrackerRelaxedModeTest {
 
         with(inOrder(listener, storage)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(listener).onSessionStateChanged(sessionTracker, updatedSessionRecord1, sessionRecord1.state)
             verify(storage).deleteAllSessionRecords()
             verify(listener).onAllSessionsTrackingStopped(
@@ -883,7 +882,7 @@ class SessionTrackerRelaxedModeTest {
         assertTrue(sessionTracker.consumeEvent(sessionRecord.sessionId, Event.LOGOUT))
 
         with(inOrder(listener, storage, logger)) {
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord))
             verify(logger).d(
                 SessionTracker.TAG,
                 "onStateChanged: '${sessionRecord.state}' -> '${State.INACTIVE}', sessionId = '${sessionRecord.sessionId}', going to auto-untrack session.."

@@ -20,6 +20,21 @@ class SessionTrackerListener(private val app: Application) : SessionTracker.List
 
     private var scope: Scope? = null
 
+    override fun onSessionTrackerInitialized(
+        sessionTracker: SessionTracker<Event, State>,
+        sessionRecords: List<SessionRecord<State>>
+    ) {
+        Log.d(TAG, "onSessionTrackerInitialized")
+        check(sessionRecords.count { (_, state) -> state == State.ACTIVE } <= 1) {
+            "One active session is allowed at most"
+        }
+        sessionRecords.forEach { (sessionId, state) ->
+            if (state == State.ACTIVE) {
+                createKoinScope(sessionId)
+            }
+        }
+    }
+
     override fun onSessionTrackingStarted(
         sessionTracker: SessionTracker<Event, State>,
         sessionRecord: SessionRecord<State>

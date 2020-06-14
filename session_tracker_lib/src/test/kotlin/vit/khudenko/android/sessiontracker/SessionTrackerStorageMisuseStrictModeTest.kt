@@ -72,8 +72,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).updateSessionRecord(updatedSessionRecord1)
         }
 
@@ -106,7 +105,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord))
             verify(storage).updateSessionRecord(updatedSessionRecord)
         }
 
@@ -139,7 +138,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord))
             verify(storage).updateSessionRecord(updatedSessionRecord)
         }
 
@@ -173,8 +172,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).updateSessionRecord(updatedSessionRecord1)
         }
 
@@ -209,6 +207,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
+            verify(listener).onSessionTrackerInitialized(sessionTracker, emptyList())
             verify(storage).createSessionRecord(SessionRecord(sessionId, state))
         }
 
@@ -242,6 +241,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
+            verify(listener).onSessionTrackerInitialized(sessionTracker, emptyList())
             verify(storage).createSessionRecord(SessionRecord(sessionId, state))
         }
 
@@ -275,6 +275,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
+            verify(listener).onSessionTrackerInitialized(sessionTracker, emptyList())
             verify(storage).createSessionRecord(SessionRecord(sessionId, state))
         }
 
@@ -308,6 +309,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
+            verify(listener).onSessionTrackerInitialized(sessionTracker, emptyList())
             verify(storage).createSessionRecord(SessionRecord(sessionId, state))
         }
 
@@ -340,8 +342,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).deleteSessionRecord(sessionRecord1.sessionId)
         }
 
@@ -373,7 +374,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord))
             verify(storage).deleteSessionRecord(sessionRecord.sessionId)
         }
 
@@ -406,8 +407,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).deleteSessionRecord(sessionRecord1.sessionId)
         }
 
@@ -440,8 +440,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).deleteSessionRecord(sessionRecord1.sessionId)
         }
 
@@ -474,8 +473,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).deleteAllSessionRecords()
         }
 
@@ -508,8 +506,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).deleteAllSessionRecords()
         }
 
@@ -542,8 +539,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).deleteAllSessionRecords()
         }
 
@@ -576,8 +572,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
         with(inOrder(storage, listener)) {
             verify(storage).readAllSessionRecords()
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord1)
-            verify(listener).onSessionTrackingStarted(sessionTracker, sessionRecord2)
+            verify(listener).onSessionTrackerInitialized(sessionTracker, listOf(sessionRecord1, sessionRecord2))
             verify(storage).deleteAllSessionRecords()
         }
 
