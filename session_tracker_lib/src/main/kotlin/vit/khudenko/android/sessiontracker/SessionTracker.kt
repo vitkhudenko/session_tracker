@@ -393,9 +393,9 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
                 initializedSessionRecords[sessionRecord.sessionId] = sessionRecord
             }
 
-        listener.onSessionTrackerInitialized(this, initializedSessionRecords.values.toList())
-
         initialized = true
+
+        listener.onSessionTrackerInitialized(this, initializedSessionRecords.values.toList())
 
         if (mode.verbose) {
             logger.d(logTag, "initialize: done, took ${System.currentTimeMillis() - startedAt} ms")

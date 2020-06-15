@@ -1,6 +1,7 @@
 package vit.khudenko.android.sessiontracker
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.argThat
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.eq
@@ -897,6 +898,89 @@ class SessionTrackerRelaxedModeTest {
         }
 
         verifyNoMoreInteractions(storage, listener, logger)
+
+        assertTrue(sessionTracker.getSessionRecords().isEmpty())
+    }
+
+    @Test
+    fun `untrackSession during initialization`() {
+        val sessionRecord = SessionRecord("session_id", State.ACTIVE)
+        val sessionRecords = listOf(sessionRecord)
+
+        storage = createStorageMock(sessionRecords)
+
+        listener = mock {
+            on { onSessionTrackerInitialized(any(), eq(sessionRecords)) } doAnswer {
+                val sessionTracker = it.getArgument<SessionTracker<Event, State>>(0)
+                sessionTracker.untrackSession(sessionRecord.sessionId)
+                Unit
+            }
+        }
+
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
+            autoUntrackStates = emptySet(),
+            mode = mode,
+            logger = logger
+        )
+
+        sessionTracker.initialize()
+
+        with(inOrder(storage, listener, logger)) {
+            verify(storage).readAllSessionRecords()
+            verify(listener).onSessionTrackerInitialized(sessionTracker, sessionRecords)
+            verify(storage).deleteSessionRecord(sessionRecord.sessionId)
+            verify(listener).onSessionTrackingStopped(sessionTracker, sessionRecord)
+        }
+
+        verifyNoMoreInteractions(listener, storage)
+        verifyZeroInteractions(logger)
+
+        assertTrue(sessionTracker.getSessionRecords().isEmpty())
+    }
+
+    @Test
+    fun `untrackSession during initialization in verbose mode`() {
+        val sessionRecord = SessionRecord("session_id", State.ACTIVE)
+        val sessionRecords = listOf(sessionRecord)
+
+        storage = createStorageMock(sessionRecords)
+
+        listener = mock {
+            on { onSessionTrackerInitialized(any(), eq(sessionRecords)) } doAnswer {
+                val sessionTracker = it.getArgument<SessionTracker<Event, State>>(0)
+                sessionTracker.untrackSession(sessionRecord.sessionId)
+                Unit
+            }
+        }
+
+        val sessionTracker = SessionTracker(
+            sessionTrackerStorage = storage,
+            listener = listener,
+            sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
+            autoUntrackStates = emptySet(),
+            mode = modeVerbose,
+            logger = logger
+        )
+
+        sessionTracker.initialize()
+
+        with(inOrder(storage, listener, logger)) {
+            verify(logger).d(SessionTracker.TAG, "initialize: starting..")
+            verify(storage).readAllSessionRecords()
+            verify(listener).onSessionTrackerInitialized(sessionTracker, sessionRecords)
+            verify(logger).d(SessionTracker.TAG, "untrackSession: sessionId = '${sessionRecord.sessionId}'")
+            verify(storage).deleteSessionRecord(sessionRecord.sessionId)
+            verify(listener).onSessionTrackingStopped(sessionTracker, sessionRecord)
+            verify(logger).d(
+                eq(SessionTracker.TAG),
+                argThat(vit.khudenko.android.sessiontracker.test_util.matches("^initialize: done, took \\d+ ms$"))
+            )
+        }
+
+        verifyNoMoreInteractions(listener, storage, logger)
 
         assertTrue(sessionTracker.getSessionRecords().isEmpty())
     }
