@@ -19,7 +19,7 @@ public class SplashActivity extends AppCompatActivity {
     @Inject
     SessionTracker<Session.Event, Session.State> sessionTracker;
 
-    private Handler handler = new Handler();
+    private Handler handler = new Handler(getApplication().getMainLooper());
 
     private Runnable action = () -> {
         List<SessionRecord> activeSessionRecords = sessionTracker.getSessionRecords().stream()

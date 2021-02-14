@@ -12,7 +12,7 @@ class SplashActivity : AppCompatActivity() {
 
     private val sessionTracker: SessionTracker<Session.Event, Session.State> by inject()
 
-    private val handler: Handler = Handler()
+    private val handler: Handler = Handler(application.mainLooper)
 
     private val action = Runnable {
         val activeSessionRecords = sessionTracker.getSessionRecords()
