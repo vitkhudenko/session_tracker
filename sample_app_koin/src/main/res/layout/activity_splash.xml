@@ -7,7 +7,7 @@
         android:layout_height="match_parent"
         android:padding="16dp"
         android:background="#ffffff"
-        tools:context=".sample_koin.MainActivity">
+        tools:context="vit.khudenko.android.sessiontracker.sample.koin.SplashActivity">
 
     <TextView
             android:gravity="center"

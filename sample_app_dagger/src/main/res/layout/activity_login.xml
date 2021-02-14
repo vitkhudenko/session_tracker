@@ -7,7 +7,7 @@
         android:padding="16dp"
         android:background="#ffffff"
         tools:ignore="HardcodedText,LabelFor,RtlHardcoded"
-        tools:context=".sample_koin.login.LoginActivity">
+        tools:context="com.chumarin.stanislav.sample_app_dagger.login.LoginActivity">
 
     <LinearLayout
             android:layout_width="match_parent"

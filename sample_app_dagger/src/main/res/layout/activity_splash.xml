@@ -7,7 +7,7 @@
         android:layout_height="match_parent"
         android:padding="16dp"
         android:background="#ffffff"
-        tools:context=".sample_koin.MainActivity">
+        tools:context="com.chumarin.stanislav.sample_app_dagger.SplashActivity">
 
     <TextView
             android:gravity="center"

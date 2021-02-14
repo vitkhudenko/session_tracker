@@ -7,7 +7,7 @@
         android:background="#ffffff"
         android:padding="16dp"
         tools:ignore="HardcodedText"
-        tools:context=".sample_koin.MainActivity">
+        tools:context="vit.khudenko.android.sessiontracker.sample.koin.MainActivity">
 
     <LinearLayout
             android:orientation="vertical"

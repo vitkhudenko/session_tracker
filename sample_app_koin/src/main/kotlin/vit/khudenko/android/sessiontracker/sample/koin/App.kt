@@ -1,4 +1,4 @@
-package vit.khudenko.android.sessiontracker.sample.koin;
+package vit.khudenko.android.sessiontracker.sample.koin
 
 import android.app.Application
 import org.koin.android.ext.android.getKoin
