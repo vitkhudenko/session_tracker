@@ -8,6 +8,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import io.reactivex.disposables.Disposable
 import org.koin.android.ext.android.getKoin
+import org.koin.androidx.viewmodel.ViewModelOwner
+import org.koin.androidx.viewmodel.scope.emptyState
 import org.koin.androidx.viewmodel.scope.getViewModel
 import vit.khudenko.android.sessiontracker.SessionId
 
@@ -19,7 +21,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sessionIdView: TextView
 
     private val viewModel: MainViewModel by lazy {
-        getKoin().getScope(scopeId = getSessionId()).getViewModel<MainViewModel>(this@MainActivity)
+        getKoin().getScope(scopeId = getSessionId()).getViewModel(
+            qualifier = null,
+            state = emptyState(),
+            owner = { ViewModelOwner.from(this, this) },
+            parameters = null
+        )
     }
 
     private var disposable: Disposable? = null
