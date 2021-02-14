@@ -12,8 +12,6 @@ buildscript {
         classpath 'com.android.tools.build:gradle:4.1.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
-
         classpath "org.jacoco:org.jacoco.core:${jacocoVersion}"
         classpath "org.jacoco:org.jacoco.report:${jacocoVersion}"
 
@@ -25,8 +23,8 @@ buildscript {
 allprojects {
     repositories {
         google()
+        maven { url "https://jitpack.io" }
         jcenter()
-        maven { url 'https://dl.bintray.com/vit-khudenko/libs' }
     }
 }
 

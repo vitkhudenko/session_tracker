@@ -1,10 +1,9 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven-publish'
 apply plugin: 'kotlin-android'
 apply plugin: 'jacoco'
 
-def libraryVersionName = '0.4.1'
+def libraryVersionName = '0.4.2'
 def artifactName = 'SessionTracker'
 
 android {
@@ -76,7 +75,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation 'vit.khudenko.android:fsm:0.3.0'
+    implementation 'com.github.vitkhudenko:state_machine:0.3.1'
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:3.1.0'
@@ -84,83 +83,36 @@ dependencies {
     testImplementation 'io.mockk:mockk:1.10.4'
 }
 
-def bintrayPropertiesFile = rootProject.file('bintray.properties')
-if (bintrayPropertiesFile.exists()) {
-    def inputStream = bintrayPropertiesFile.newInputStream()
-    try {
-        def properties = new Properties()
-        properties.load(inputStream)
-        properties.each {
-            ext.set(it.key, it.value)
-        }
-    } finally {
-        inputStream.close()
-    }
-}
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
 
-publishing {
-    publications {
-        release(MavenPublication) {
+                from components.release
 
-            artifacts {
-                artifact("$buildDir/outputs/aar/session_tracker_lib-release.aar")
-                groupId 'vit.khudenko.android'
-                artifactId 'sessiontracker'
+                groupId 'com.github.vitkhudenko'
+                artifactId 'session_tracker'
                 version libraryVersionName
-                artifact sourcesJar {
-                    classifier 'sources'
+
+                artifacts {
+                    artifact sourcesJar {
+                        classifier 'sources'
+                    }
                 }
-            }
 
-            pom.withXml {
-
-                asNode().appendNode('name', artifactName)
-
-                // Define this explicitly if using implementation or api configurations
-                def dependenciesNode = asNode().getAt('dependencies')[0] ?: asNode().appendNode('dependencies')
-
-                // Iterate over the implementation dependencies (we don't want the test ones),
-                // adding a <dependency> node for each
-
-                configurations.implementation.allDependencies.each {
-                    // Ensure dependencies such as fileTree are not included.
-                    if (it.name != 'unspecified') {
-                        def dependencyNode = dependenciesNode.appendNode('dependency')
-                        dependencyNode.appendNode('groupId', it.group)
-                        dependencyNode.appendNode('artifactId', it.name)
-                        dependencyNode.appendNode('version', it.version)
+                pom {
+                    name = artifactName
+                    description = 'A general purpose framework to provide a foundation for session management.'
+                    url = 'https://github.com/vitkhudenko/session_tracker'
+                    licenses {
+                        license {
+                            name = 'MIT'
+                            url = 'https://github.com/vitkhudenko/session_tracker/blob/master/LICENSE'
+                        }
                     }
                 }
 
             }
-        }
-    }
-}
-
-bintray {
-    if (!project.hasProperty('bintray.user')) {
-        return
-    }
-    user = project.property('bintray.user')
-    key = project.property('bintray.apiKey')
-    publications = ['release']
-    dryRun = false
-    publish = true
-    override = false
-    pkg {
-        repo = 'libs'
-        name = artifactName
-        licenses = ['MIT']
-        desc = 'A general purpose framework to provide a foundation for session management.'
-        websiteUrl = 'https://github.com/vitkhudenko/session_tracker'
-        vcsUrl = 'https://github.com/vitkhudenko/session_tracker.git'
-        labels = ['session', 'kotlin', 'java', 'android']
-        publicDownloadNumbers = false
-        githubRepo = 'vitkhudenko/session_tracker'
-        githubReleaseNotesFile = 'README.md'
-        version {
-            name = libraryVersionName
-            released = new Date()
         }
     }
 }

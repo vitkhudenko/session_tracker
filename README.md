@@ -6,14 +6,14 @@ while SessionTracker provides callbacks to create/update/release session resourc
 
 ## Integration
 
-At the project level `build.gradle`, add a maven repo pointing to `https://dl.bintray.com/vit-khudenko/libs`, e.g.:
+At the project level `build.gradle`, add a maven repo pointing to `https://jitpack.io`, e.g.:
 
 ```groovy
 allprojects {
     repositories {
         google()
+        maven { url "https://jitpack.io" } // this is it
         jcenter()
-        maven { url 'https://dl.bintray.com/vit-khudenko/libs' } // this is it
     }
 }
 ```
@@ -21,7 +21,7 @@ allprojects {
 At a module level `build.gradle`, add the following dependency:
 
 ```groovy
-implementation 'vit.khudenko.android:sessiontracker:0.4.1'
+implementation 'com.github.vitkhudenko:session_tracker:0.4.2'
 ```
 
 ## Contract description
