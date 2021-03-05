@@ -3,7 +3,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'kotlin-android'
 apply plugin: 'jacoco'
 
-def libraryVersionName = '0.4.2'
+def libraryVersionName = '0.4.3'
 def artifactName = 'SessionTracker'
 
 android {
@@ -75,7 +75,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation 'com.github.vitkhudenko:state_machine:0.3.1'
+    implementation 'com.github.vitkhudenko:state_machine:0.3.2'
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:3.1.0'
