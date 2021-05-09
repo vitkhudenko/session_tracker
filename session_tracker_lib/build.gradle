@@ -3,7 +3,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'kotlin-android'
 apply plugin: 'jacoco'
 
-def libraryVersionName = '0.4.3'
+def libraryVersionName = '0.4.4'
 def artifactName = 'SessionTracker'
 
 android {
