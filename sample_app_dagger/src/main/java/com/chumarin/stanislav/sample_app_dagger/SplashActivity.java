@@ -19,7 +19,7 @@ public class SplashActivity extends AppCompatActivity {
     @Inject
     SessionTracker<Session.Event, Session.State> sessionTracker;
 
-    private Handler handler = new Handler(getApplication().getMainLooper());
+    private Handler handler;
 
     private Runnable action = () -> {
         List<SessionRecord> activeSessionRecords = sessionTracker.getSessionRecords().stream()
@@ -42,6 +42,7 @@ public class SplashActivity extends AppCompatActivity {
         AndroidInjection.inject(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
+        handler = new Handler(getApplication().getMainLooper());
     }
 
     @Override

@@ -12,7 +12,7 @@ class SplashActivity : AppCompatActivity() {
 
     private val sessionTracker: SessionTracker<Session.Event, Session.State> by inject()
 
-    private val handler: Handler = Handler(application.mainLooper)
+    private lateinit var handler: Handler
 
     private val action = Runnable {
         val activeSessionRecords = sessionTracker.getSessionRecords()
@@ -37,6 +37,7 @@ class SplashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
+        handler = Handler(application.mainLooper)
     }
 
     override fun onResume() {
