@@ -21,7 +21,7 @@ allprojects {
 At a module level `build.gradle`, add the following dependency:
 
 ```groovy
-implementation 'com.github.vitkhudenko:session_tracker:0.4.4'
+implementation 'com.github.vitkhudenko:session_tracker:0.4.5'
 ```
 
 ## Contract description
