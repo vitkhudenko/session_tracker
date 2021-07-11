@@ -1,53 +1,38 @@
 package vit.khudenko.android.sessiontracker.sample.koin.login
 
-import io.reactivex.Observable
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
-import io.reactivex.subjects.BehaviorSubject
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import vit.khudenko.android.sessiontracker.SessionTracker
 import vit.khudenko.android.sessiontracker.sample.koin.Session
 import vit.khudenko.android.sessiontracker.sample.koin.util.BaseViewModel
-import java.util.concurrent.TimeUnit
 
 class LoginViewModel(
     private val sessionTracker: SessionTracker<Session.Event, Session.State>
 ) : BaseViewModel() {
 
-    private val state: BehaviorSubject<State> = BehaviorSubject.createDefault(State.Idle)
-
-    private var disposable: Disposable? = null
+    private val state = MutableStateFlow<State>(State.Idle)
 
     fun onLoginButtonClicked(userId: String) {
-        state.onNext(State.Progress)
+        state.value = State.Progress
 
-        disposable = Observable.fromCallable {
-            synchronized(sessionTracker) {
-                val targetSessionRecord = sessionTracker.getSessionRecords()
-                    .firstOrNull { record -> record.sessionId == userId }
-                if (targetSessionRecord == null) {
-                    sessionTracker.trackSession(userId, Session.State.ACTIVE)
-                } else {
-                    sessionTracker.consumeEvent(userId, Session.Event.LOGIN)
-                }
+        viewModelScope.launch {
+            val targetSessionRecord = sessionTracker.getSessionRecords()
+                .firstOrNull { record -> record.sessionId == userId }
+            if (targetSessionRecord == null) {
+                sessionTracker.trackSession(userId, Session.State.ACTIVE)
+            } else {
+                sessionTracker.consumeEvent(userId, Session.Event.LOGIN)
             }
-            userId
+            delay(2000)
+            state.value = State.Success(userId)
         }
-            .subscribeOn(Schedulers.io())
-            .delay(2, TimeUnit.SECONDS, Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe {
-                state.onNext(State.Success(it))
-            }
     }
 
-    fun observeState(): Observable<State> = state.hide()
-
-    override fun onCleared() {
-        super.onCleared()
-        disposable?.dispose()
-        disposable = null
-    }
+    fun stateFlow(): Flow<State> = state
 
     sealed class State {
         object Idle : State()

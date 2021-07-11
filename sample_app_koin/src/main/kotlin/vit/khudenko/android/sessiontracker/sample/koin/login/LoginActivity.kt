@@ -8,7 +8,11 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
-import io.reactivex.disposables.Disposable
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import vit.khudenko.android.sessiontracker.sample.koin.EXTRA_CURRENT_SESSION_ID
 import vit.khudenko.android.sessiontracker.sample.koin.MainActivity
@@ -21,7 +25,6 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var progressView: View
 
     private val viewModel: LoginViewModel by viewModel()
-    private var disposable: Disposable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,35 +41,29 @@ class LoginActivity : AppCompatActivity() {
                 hideKeyboard(userIdView)
             }
         }
-    }
 
-    override fun onStart() {
-        super.onStart()
-        disposable = viewModel.observeState()
-            .subscribe {
-                when (it) {
-                    LoginViewModel.State.Idle -> {
-                        loginButton.isEnabled = true
-                        progressView.visibility= View.GONE
-                    }
-                    LoginViewModel.State.Progress -> {
-                        loginButton.isEnabled = false
-                        progressView.visibility= View.VISIBLE
-                    }
-                    is LoginViewModel.State.Success -> {
-                        val intent = Intent(this, MainActivity::class.java)
-                        intent.putExtra(EXTRA_CURRENT_SESSION_ID, it.userId)
-                        startActivity(intent)
-                        finish()
+        lifecycleScope.launch {
+            viewModel.stateFlow()
+                .flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)
+                .collect {
+                    when (it) {
+                        LoginViewModel.State.Idle -> {
+                            loginButton.isEnabled = true
+                            progressView.visibility= View.GONE
+                        }
+                        LoginViewModel.State.Progress -> {
+                            loginButton.isEnabled = false
+                            progressView.visibility= View.VISIBLE
+                        }
+                        is LoginViewModel.State.Success -> {
+                            val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                            intent.putExtra(EXTRA_CURRENT_SESSION_ID, it.userId)
+                            startActivity(intent)
+                            finish()
+                        }
                     }
                 }
-            }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        disposable?.dispose()
-        disposable = null
+        }
     }
 
     private fun hideKeyboard(editText: EditText) {
