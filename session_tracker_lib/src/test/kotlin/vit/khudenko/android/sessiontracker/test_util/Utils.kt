@@ -50,7 +50,7 @@ fun verifyInitialization(
     listener: SessionTracker.Listener<Event, State>,
     mode: SessionTracker.Mode
 ) {
-    sessionTracker.initialize()
+    sessionTracker.initialize(listener)
 
     with(inOrder(storage, listener, logger)) {
         if (mode.verbose) {

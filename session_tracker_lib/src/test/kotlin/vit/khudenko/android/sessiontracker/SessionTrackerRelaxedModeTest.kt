@@ -49,7 +49,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,
@@ -67,7 +66,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = modeVerbose,
@@ -85,14 +83,13 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = setOf(State.FORGOTTEN),
             mode = mode,
             logger = logger
         )
 
-        sessionTracker.initialize()
+        sessionTracker.initialize(listener)
 
         verify(storage).readAllSessionRecords()
         verify(logger).e(
@@ -109,9 +106,8 @@ class SessionTrackerRelaxedModeTest {
     fun `initialization without state transitions fails on state machine's builder validation`() {
         storage = createStorageMock(listOf(SessionRecord("session_id", State.ACTIVE)))
 
-        val sessionTracker = SessionTracker(
+        val sessionTracker = SessionTracker<Event, State>(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = mock {
                 on { getStateTransitions(any()) } doReturn emptyList() // incomplete config
             },
@@ -121,7 +117,7 @@ class SessionTrackerRelaxedModeTest {
         )
 
         assertThrows(RuntimeException::class.java, "Unable to initialize SessionTracker: error creating StateMachine") {
-            sessionTracker.initialize()
+            sessionTracker.initialize(listener)
         }
 
         verify(storage).readAllSessionRecords()
@@ -136,7 +132,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,
@@ -145,7 +140,7 @@ class SessionTrackerRelaxedModeTest {
 
         verifyInitialization(sessionTracker, sessionRecords, logger, storage, listener, mode)
 
-        sessionTracker.initialize()
+        sessionTracker.initialize(listener)
 
         verify(logger).w(SessionTracker.TAG, "initialize: already initialized, skipping..")
         verifyZeroInteractions(listener, storage)
@@ -157,7 +152,6 @@ class SessionTrackerRelaxedModeTest {
     fun trackSession() {
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,
@@ -184,7 +178,6 @@ class SessionTrackerRelaxedModeTest {
     fun `trackSession() in verbose mode`() {
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = modeVerbose,
@@ -218,7 +211,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = setOf(state),
             mode = mode,
@@ -247,7 +239,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,
@@ -276,7 +267,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,
@@ -301,7 +291,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,
@@ -330,7 +319,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = modeVerbose,
@@ -360,7 +348,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,
@@ -390,7 +377,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,
@@ -422,7 +408,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = modeVerbose,
@@ -450,7 +435,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,
@@ -472,7 +456,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = modeVerbose,
@@ -501,7 +484,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,
@@ -534,7 +516,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = modeVerbose,
@@ -573,7 +554,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,
@@ -598,7 +578,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = modeVerbose,
@@ -638,7 +617,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = setOf(State.FORGOTTEN),
             mode = mode,
@@ -677,7 +655,6 @@ class SessionTrackerRelaxedModeTest {
         }
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = setOf(State.FORGOTTEN),
             mode = mode,
@@ -725,7 +702,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = setOf(State.FORGOTTEN),
             mode = mode,
@@ -733,7 +709,7 @@ class SessionTrackerRelaxedModeTest {
         )
 
         with(sessionTracker) {
-            initialize()
+            initialize(listener)
             assertTrue(consumeEvent(sessionRecord1.sessionId, Event.LOGOUT))
         }
 
@@ -779,7 +755,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = setOf(State.FORGOTTEN),
             mode = mode,
@@ -787,7 +762,7 @@ class SessionTrackerRelaxedModeTest {
         )
 
         with(sessionTracker) {
-            initialize()
+            initialize(listener)
             assertTrue(consumeEvent(sessionRecord1.sessionId, Event.LOGOUT))
         }
 
@@ -819,7 +794,6 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,
@@ -868,14 +842,13 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = setOf(State.INACTIVE),
             mode = mode,
             logger = logger
         )
 
-        sessionTracker.initialize()
+        sessionTracker.initialize(listener)
         assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
 
         reset(storage, logger)
@@ -919,14 +892,13 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,
             logger = logger
         )
 
-        sessionTracker.initialize()
+        sessionTracker.initialize(listener)
 
         with(inOrder(storage, listener, logger)) {
             verify(storage).readAllSessionRecords()
@@ -958,14 +930,13 @@ class SessionTrackerRelaxedModeTest {
 
         val sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = modeVerbose,
             logger = logger
         )
 
-        sessionTracker.initialize()
+        sessionTracker.initialize(listener)
 
         with(inOrder(storage, listener, logger)) {
             verify(logger).d(SessionTracker.TAG, "initialize: starting..")

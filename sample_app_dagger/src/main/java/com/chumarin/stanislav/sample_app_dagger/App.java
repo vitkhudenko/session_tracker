@@ -31,7 +31,7 @@ public class App extends Application implements HasAndroidInjector {
         instance = this;
         appComponent = DaggerAppComponent.builder().application(this).build();
         appComponent.inject(this);
-        appComponent.getSessionTracker().initialize();
+        appComponent.getSessionTracker().initialize(appComponent.getSessionTrackerListener());
     }
 
     @Override

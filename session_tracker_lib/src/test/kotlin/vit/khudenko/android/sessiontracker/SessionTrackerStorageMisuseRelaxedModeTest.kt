@@ -37,14 +37,13 @@ class SessionTrackerStorageMisuseRelaxedModeTest {
     private fun initSessionTracker(storage: ISessionTrackerStorage<State>) {
         sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,
             logger = logger
         )
         sessionTrackerRef.set(sessionTracker)
-        sessionTracker.initialize()
+        sessionTracker.initialize(listener)
     }
 
     @Test

@@ -27,7 +27,6 @@ class UninitializedSessionTrackerStrictModeTest {
 
         sessionTracker = SessionTracker(
             sessionTrackerStorage = storage,
-            listener = listener,
             sessionStateTransitionsSupplier = sessionStateTransitionsSupplier,
             autoUntrackStates = emptySet(),
             mode = mode,

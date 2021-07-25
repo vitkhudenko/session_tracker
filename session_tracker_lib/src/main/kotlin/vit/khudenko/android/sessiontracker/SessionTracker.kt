@@ -21,7 +21,7 @@ import vit.khudenko.android.fsm.StateMachine
  * ### Session tracking state VS. session state
  *
  * In SessionTracker framework, sessions are represented by session tracking records - instances of
- * [`SessionRecord`][SessionRecord]. It is an immutable data structure, that has just 2 fields - session ID and
+ * [`SessionRecord`][SessionRecord]. It is an immutable data structure of 2 fields - session ID and
  * session tracking state.
  *
  * Note, there are two (partially intersecting) types of session state:
@@ -80,7 +80,7 @@ import vit.khudenko.android.fsm.StateMachine
  * ### Session tracking
  *
  * In order to make SessionTracker ready to function it should be initialized first. The most appropriate place for
- * [`initialize()`][initialize] call is
+ * [`initialize(sessionTrackerListener: Listener<Event, State>)`][initialize] call is
  * [`Application.onCreate()`][android.app.Application.onCreate].
  *
  * Suppose your user hits "Login" button, your app authenticates user and creates a session. In order to make
@@ -116,7 +116,7 @@ import vit.khudenko.android.fsm.StateMachine
  *
  * - `onSessionTrackerInitialized(sessionTracker: SessionTracker<Event, State>, sessionRecords: List<SessionRecord<State>>)` -
  *     SessionTracker has added sessions to the list of tracked sessions.
- *     This happens as a result of calling [`SessionTracker.initialize()`][initialize].
+ *     This happens as a result of calling [`SessionTracker.initialize(sessionTrackerListener: Listener<Event, State>)`][initialize].
  *     This callback is the right place to create any resources for the sessions (a DB connection, a DI scope, etc.).
  *
  * - `onSessionTrackingStarted(sessionTracker: SessionTracker<Event, State>, sessionRecord: SessionRecord<State>)` -
@@ -164,7 +164,6 @@ import vit.khudenko.android.fsm.StateMachine
 class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
     private val sessionTrackerStorage: ISessionTrackerStorage<State>,
     private val sessionStateTransitionsSupplier: ISessionStateTransitionsSupplier<Event, State>,
-    private val listener: Listener<Event, State>,
     /**
      * If a session appears in one of these states, then `SessionTracker` automatically untracks such session.
      * The effect of automatic untracking is similar to making an explicit [`untrackSession()`][untrackSession] call.
@@ -238,7 +237,7 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
 
         /**
          * The `SessionTracker` has added session(s) to the list of tracked sessions. This happens as a result
-         * of calling [`SessionTracker.initialize()`][initialize].
+         * of calling [`SessionTracker.initialize(sessionTrackerListener: Listener<Event, State>)`][initialize].
          *
          * This callback is the right place to create any resources for the session
          * (a DB connection, a DI scope, etc.).
@@ -327,6 +326,7 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
     private var initialized: Boolean = false
     private val sessionsMap = LinkedHashMap<SessionId, SessionInfo<Event, State>>()
     private var persisting = false
+    private lateinit var listener: Listener<Event, State>
 
     /**
      * Must be called before calling any other methods.
@@ -334,8 +334,10 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
      * Subsequent calls are ignored.
      *
      * This method calls [`ISessionTrackerStorage.readAllSessionRecords()`][ISessionTrackerStorage.readAllSessionRecords],
-     * starts tracking the obtained session records and notifies session tracker listener (see
-     * [`Listener.onSessionTrackingStarted()`][Listener.onSessionTrackingStarted]).
+     * starts tracking the obtained session records and notifies [`sessionTrackerListener`][sessionTrackerListener]
+     * (see [`Listener.onSessionTrackingStarted()`][Listener.onSessionTrackingStarted]).
+     *
+     * @param sessionTrackerListener [`Listener`][Listener] to communicate the session tracking lifecycle and state changes.
      *
      * @throws [RuntimeException] for a strict [`mode`][mode], if [`autoUntrackStates`][autoUntrackStates] are defined
      * AND session is in one of such states. For a relaxed [`mode`][mode] it just logs an error message and skips such
@@ -346,7 +348,7 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
      * message and skips such session from tracking.
      */
     @Synchronized
-    fun initialize() {
+    fun initialize(sessionTrackerListener: Listener<Event, State>) {
         val startedAt = System.currentTimeMillis()
 
         if (initialized) {
@@ -357,6 +359,8 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
         if (mode.verbose) {
             logger.d(logTag, "initialize: starting..")
         }
+
+        this.listener = sessionTrackerListener
 
         val loadedSessionRecords = sessionTrackerStorage.readAllSessionRecords()
 
@@ -395,7 +399,7 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
 
         initialized = true
 
-        listener.onSessionTrackerInitialized(this, initializedSessionRecords.values.toList())
+        sessionTrackerListener.onSessionTrackerInitialized(this, initializedSessionRecords.values.toList())
 
         if (mode.verbose) {
             logger.d(logTag, "initialize: done, took ${System.currentTimeMillis() - startedAt} ms")

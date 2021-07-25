@@ -21,7 +21,7 @@ import vit.khudenko.android.fsm.StateMachine
  * ### Session tracking state VS. session state
  *
  * In SessionTracker framework, sessions are represented by session tracking records - instances of
- * [`SessionRecord`][SessionRecord]. It is an immutable data structure, that has just 2 fields - session ID and
+ * [`SessionRecord`][SessionRecord]. It is an immutable data structure of 2 fields - session ID and
  * session tracking state.
  *
  * Note, there are two (partially intersecting) types of session state:
@@ -80,7 +80,7 @@ import vit.khudenko.android.fsm.StateMachine
  * ### Session tracking
  *
  * In order to make SessionTracker ready to function it should be initialized first. The most appropriate place for
- * [`initialize()`][initialize] call is
+ * [`initialize(sessionTrackerListener: Listener&lt;Event, State&gt;)`][initialize] call is
  * [`Application.onCreate()`][android.app.Application.onCreate].
  *
  * Suppose your user hits &quot;Login&quot; button, your app authenticates user and creates a session. In order to make
@@ -116,7 +116,7 @@ import vit.khudenko.android.fsm.StateMachine
  *
  * - `onSessionTrackerInitialized(sessionTracker: SessionTracker&lt;Event, State&gt;, sessionRecords: List&lt;SessionRecord&lt;State&gt;&gt;)` -
  *     SessionTracker has added sessions to the list of tracked sessions.
- *     This happens as a result of calling [`SessionTracker.initialize()`][initialize].
+ *     This happens as a result of calling [`SessionTracker.initialize(sessionTrackerListener: Listener&lt;Event, State&gt;)`][initialize].
  *     This callback is the right place to create any resources for the sessions (a DB connection, a DI scope, etc.).
  *
  * - `onSessionTrackingStarted(sessionTracker: SessionTracker&lt;Event, State&gt;, sessionRecord: SessionRecord&lt;State&gt;)` -
@@ -162,9 +162,8 @@ import vit.khudenko.android.fsm.StateMachine
  * Typical SessionTracker usage implies being a singleton in your app.
  */
 <span class="fc" id="L164">class SessionTracker&lt;Event : Enum&lt;Event&gt;, State : Enum&lt;State&gt;&gt;(</span>
-    private val sessionTrackerStorage: ISessionTrackerStorage&lt;State&gt;,
-    private val sessionStateTransitionsSupplier: ISessionStateTransitionsSupplier&lt;Event, State&gt;,
-    private val listener: Listener&lt;Event, State&gt;,
+<span class="fc" id="L165">    private val sessionTrackerStorage: ISessionTrackerStorage&lt;State&gt;,</span>
+<span class="fc" id="L166">    private val sessionStateTransitionsSupplier: ISessionStateTransitionsSupplier&lt;Event, State&gt;,</span>
     /**
      * If a session appears in one of these states, then `SessionTracker` automatically untracks such session.
      * The effect of automatic untracking is similar to making an explicit [`untrackSession()`][untrackSession] call.
@@ -173,14 +172,14 @@ import vit.khudenko.android.fsm.StateMachine
      * @see [untrackSession]
      * @see [untrackAllSessions]
      */
-    private val autoUntrackStates: Set&lt;State&gt;,
-    private val mode: Mode,
-<span class="pc" id="L178">    private val logger: Logger = Logger.DefaultImpl(),</span>
-<span class="fc" id="L179">    private val logTag: String = TAG</span>
+<span class="fc" id="L175">    private val autoUntrackStates: Set&lt;State&gt;,</span>
+<span class="fc" id="L176">    private val mode: Mode,</span>
+<span class="pc" id="L177">    private val logger: Logger = Logger.DefaultImpl(),</span>
+<span class="fc" id="L178">    private val logTag: String = TAG</span>
 ) {
 
     companion object {
-<span class="fc" id="L183">        internal val TAG = SessionTracker::class.java.simpleName</span>
+<span class="fc" id="L182">        internal val TAG = SessionTracker::class.java.simpleName</span>
     }
 
     /**
@@ -191,7 +190,7 @@ import vit.khudenko.android.fsm.StateMachine
      * @see [Mode.RELAXED]
      * @see [Mode.RELAXED_VERBOSE]
      */
-<span class="fc" id="L194">    enum class Mode(val strict: Boolean, val verbose: Boolean) {</span>
+<span class="fc" id="L193">    enum class Mode(val strict: Boolean, val verbose: Boolean) {</span>
 
         /**
          * In this mode SessionTracker does not tolerate most of the misuse/misconfiguration issues by crashing the app.
@@ -201,12 +200,12 @@ import vit.khudenko.android.fsm.StateMachine
          * @see [untrackSession]
          * @see [consumeEvent]
          */
-<span class="fc" id="L204">        STRICT(strict = true, verbose = false),</span>
+<span class="fc" id="L203">        STRICT(strict = true, verbose = false),</span>
 
         /**
          * Same as [`STRICT`][STRICT], but with more logging.
          */
-<span class="fc" id="L209">        STRICT_VERBOSE(strict = true, verbose = true),</span>
+<span class="fc" id="L208">        STRICT_VERBOSE(strict = true, verbose = true),</span>
 
         /**
          * In this mode SessionTracker tries to overstep misuse/misconfiguration issues (if possible) by just logging
@@ -217,12 +216,12 @@ import vit.khudenko.android.fsm.StateMachine
          * @see [untrackSession]
          * @see [consumeEvent]
          */
-<span class="fc" id="L220">        RELAXED(strict = false, verbose = false),</span>
+<span class="fc" id="L219">        RELAXED(strict = false, verbose = false),</span>
 
         /**
          * Same as [`RELAXED`][RELAXED], but with more logging.
          */
-<span class="fc" id="L225">        RELAXED_VERBOSE(strict = false, verbose = true)</span>
+<span class="fc" id="L224">        RELAXED_VERBOSE(strict = false, verbose = true)</span>
     }
 
     /**
@@ -238,7 +237,7 @@ import vit.khudenko.android.fsm.StateMachine
 
         /**
          * The `SessionTracker` has added session(s) to the list of tracked sessions. This happens as a result
-         * of calling [`SessionTracker.initialize()`][initialize].
+         * of calling [`SessionTracker.initialize(sessionTrackerListener: Listener&lt;Event, State&gt;)`][initialize].
          *
          * This callback is the right place to create any resources for the session
          * (a DB connection, a DI scope, etc.).
@@ -309,24 +308,25 @@ import vit.khudenko.android.fsm.StateMachine
         /**
          * Default implementation of [`Logger`][Logger] that uses [`android.util.Log`][android.util.Log].
          */
-<span class="fc" id="L312">        class DefaultImpl : Logger {</span>
+<span class="fc" id="L311">        class DefaultImpl : Logger {</span>
             override fun d(tag: String, message: String) {
-<span class="fc" id="L314">                Log.d(tag, message)</span>
-<span class="fc" id="L315">            }</span>
+<span class="fc" id="L313">                Log.d(tag, message)</span>
+<span class="fc" id="L314">            }</span>
 
             override fun w(tag: String, message: String) {
-<span class="fc" id="L318">                Log.w(tag, message)</span>
-<span class="fc" id="L319">            }</span>
+<span class="fc" id="L317">                Log.w(tag, message)</span>
+<span class="fc" id="L318">            }</span>
 
             override fun e(tag: String, message: String) {
-<span class="fc" id="L322">                Log.e(tag, message)</span>
-<span class="fc" id="L323">            }</span>
+<span class="fc" id="L321">                Log.e(tag, message)</span>
+<span class="fc" id="L322">            }</span>
         }
     }
 
     private var initialized: Boolean = false
-<span class="fc" id="L328">    private val sessionsMap = LinkedHashMap&lt;SessionId, SessionInfo&lt;Event, State&gt;&gt;()</span>
+<span class="fc" id="L327">    private val sessionsMap = LinkedHashMap&lt;SessionId, SessionInfo&lt;Event, State&gt;&gt;()</span>
     private var persisting = false
+    private lateinit var listener: Listener&lt;Event, State&gt;
 
     /**
      * Must be called before calling any other methods.
@@ -334,8 +334,10 @@ import vit.khudenko.android.fsm.StateMachine
      * Subsequent calls are ignored.
      *
      * This method calls [`ISessionTrackerStorage.readAllSessionRecords()`][ISessionTrackerStorage.readAllSessionRecords],
-     * starts tracking the obtained session records and notifies session tracker listener (see
-     * [`Listener.onSessionTrackingStarted()`][Listener.onSessionTrackingStarted]).
+     * starts tracking the obtained session records and notifies [`sessionTrackerListener`][sessionTrackerListener]
+     * (see [`Listener.onSessionTrackingStarted()`][Listener.onSessionTrackingStarted]).
+     *
+     * @param sessionTrackerListener [`Listener`][Listener] to communicate the session tracking lifecycle and state changes.
      *
      * @throws [RuntimeException] for a strict [`mode`][mode], if [`autoUntrackStates`][autoUntrackStates] are defined
      * AND session is in one of such states. For a relaxed [`mode`][mode] it just logs an error message and skips such
@@ -346,61 +348,63 @@ import vit.khudenko.android.fsm.StateMachine
      * message and skips such session from tracking.
      */
     @Synchronized
-    fun initialize() {
-<span class="fc" id="L350">        val startedAt = System.currentTimeMillis()</span>
+    fun initialize(sessionTrackerListener: Listener&lt;Event, State&gt;) {
+<span class="fc" id="L352">        val startedAt = System.currentTimeMillis()</span>
 
-<span class="fc bfc" id="L352" title="All 2 branches covered.">        if (initialized) {</span>
-<span class="fc" id="L353">            logger.w(logTag, &quot;initialize: already initialized, skipping..&quot;)</span>
-<span class="fc" id="L354">            return</span>
+<span class="fc bfc" id="L354" title="All 2 branches covered.">        if (initialized) {</span>
+<span class="fc" id="L355">            logger.w(logTag, &quot;initialize: already initialized, skipping..&quot;)</span>
+<span class="fc" id="L356">            return</span>
         }
 
-<span class="fc bfc" id="L357" title="All 2 branches covered.">        if (mode.verbose) {</span>
-<span class="fc" id="L358">            logger.d(logTag, &quot;initialize: starting..&quot;)</span>
+<span class="fc bfc" id="L359" title="All 2 branches covered.">        if (mode.verbose) {</span>
+<span class="fc" id="L360">            logger.d(logTag, &quot;initialize: starting..&quot;)</span>
         }
 
-<span class="fc" id="L361">        val loadedSessionRecords = sessionTrackerStorage.readAllSessionRecords()</span>
+<span class="fc" id="L363">        this.listener = sessionTrackerListener</span>
 
-<span class="fc" id="L363">        loadedSessionRecords</span>
-<span class="fc" id="L364">            .filter { sessionRecord -&gt;</span>
-<span class="fc bfc" id="L365" title="All 2 branches covered.">                sessionRecord.state in autoUntrackStates</span>
-<span class="fc" id="L366">            }.forEach { (sessionId, state) -&gt;</span>
-<span class="fc" id="L367">                val explanation = &quot;session with ID '${sessionId}' is in auto-untrack state (${state})&quot;</span>
-<span class="fc bfc" id="L368" title="All 2 branches covered.">                if (mode.strict) {</span>
-<span class="fc" id="L369">                    throw RuntimeException(&quot;Unable to initialize $logTag: $explanation&quot;)</span>
+<span class="fc" id="L365">        val loadedSessionRecords = sessionTrackerStorage.readAllSessionRecords()</span>
+
+<span class="fc" id="L367">        loadedSessionRecords</span>
+<span class="fc" id="L368">            .filter { sessionRecord -&gt;</span>
+<span class="fc bfc" id="L369" title="All 2 branches covered.">                sessionRecord.state in autoUntrackStates</span>
+<span class="fc" id="L370">            }.forEach { (sessionId, state) -&gt;</span>
+<span class="fc" id="L371">                val explanation = &quot;session with ID '${sessionId}' is in auto-untrack state (${state})&quot;</span>
+<span class="fc bfc" id="L372" title="All 2 branches covered.">                if (mode.strict) {</span>
+<span class="fc" id="L373">                    throw RuntimeException(&quot;Unable to initialize $logTag: $explanation&quot;)</span>
                 } else {
-<span class="fc" id="L371">                    logger.e(logTag, &quot;initialize: $explanation, rejecting this session&quot;)</span>
+<span class="fc" id="L375">                    logger.e(logTag, &quot;initialize: $explanation, rejecting this session&quot;)</span>
                 }
-<span class="fc" id="L373">            }</span>
+<span class="fc" id="L377">            }</span>
 
-<span class="fc" id="L375">        val initializedSessionRecords = mutableMapOf&lt;SessionId, SessionRecord&lt;State&gt;&gt;()</span>
+<span class="fc" id="L379">        val initializedSessionRecords = mutableMapOf&lt;SessionId, SessionRecord&lt;State&gt;&gt;()</span>
 
-<span class="fc" id="L377">        loadedSessionRecords</span>
-<span class="fc" id="L378">            .filterNot { sessionRecord -&gt;</span>
-<span class="fc bfc" id="L379" title="All 2 branches covered.">                sessionRecord.state in autoUntrackStates</span>
+<span class="fc" id="L381">        loadedSessionRecords</span>
+<span class="fc" id="L382">            .filterNot { sessionRecord -&gt;</span>
+<span class="fc bfc" id="L383" title="All 2 branches covered.">                sessionRecord.state in autoUntrackStates</span>
             }
-<span class="fc" id="L381">            .map { sessionRecord -&gt;</span>
-<span class="fc" id="L382">                val stateMachine = try {</span>
-<span class="fc" id="L383">                    setupSessionStateMachine(sessionRecord)</span>
-<span class="fc" id="L384">                } catch (e: Exception) {</span>
-<span class="fc" id="L385">                    throw RuntimeException(</span>
-<span class="fc" id="L386">                        &quot;Unable to initialize $logTag: error creating ${StateMachine::class.java.simpleName}&quot;, e</span>
+<span class="fc" id="L385">            .map { sessionRecord -&gt;</span>
+<span class="fc" id="L386">                val stateMachine = try {</span>
+<span class="fc" id="L387">                    setupSessionStateMachine(sessionRecord)</span>
+<span class="fc" id="L388">                } catch (e: Exception) {</span>
+<span class="fc" id="L389">                    throw RuntimeException(</span>
+<span class="fc" id="L390">                        &quot;Unable to initialize $logTag: error creating ${StateMachine::class.java.simpleName}&quot;, e</span>
                     )
                 }
-<span class="fc" id="L389">                sessionRecord to stateMachine</span>
+<span class="fc" id="L393">                sessionRecord to stateMachine</span>
             }
-<span class="fc" id="L391">            .forEach { (sessionRecord, stateMachine) -&gt;</span>
-<span class="fc" id="L392">                sessionsMap[sessionRecord.sessionId] = SessionInfo(stateMachine)</span>
-<span class="fc" id="L393">                initializedSessionRecords[sessionRecord.sessionId] = sessionRecord</span>
-<span class="fc" id="L394">            }</span>
+<span class="fc" id="L395">            .forEach { (sessionRecord, stateMachine) -&gt;</span>
+<span class="fc" id="L396">                sessionsMap[sessionRecord.sessionId] = SessionInfo(stateMachine)</span>
+<span class="fc" id="L397">                initializedSessionRecords[sessionRecord.sessionId] = sessionRecord</span>
+<span class="fc" id="L398">            }</span>
 
-<span class="fc" id="L396">        listener.onSessionTrackerInitialized(this, initializedSessionRecords.values.toList())</span>
+<span class="fc" id="L400">        initialized = true</span>
 
-<span class="fc" id="L398">        initialized = true</span>
+<span class="fc" id="L402">        sessionTrackerListener.onSessionTrackerInitialized(this, initializedSessionRecords.values.toList())</span>
 
-<span class="fc bfc" id="L400" title="All 2 branches covered.">        if (mode.verbose) {</span>
-<span class="fc" id="L401">            logger.d(logTag, &quot;initialize: done, took ${System.currentTimeMillis() - startedAt} ms&quot;)</span>
+<span class="fc bfc" id="L404" title="All 2 branches covered.">        if (mode.verbose) {</span>
+<span class="fc" id="L405">            logger.d(logTag, &quot;initialize: done, took ${System.currentTimeMillis() - startedAt} ms&quot;)</span>
         }
-<span class="fc" id="L403">    }</span>
+<span class="fc" id="L407">    }</span>
 
     /**
      * @return a list of the currently tracked session records.
@@ -410,19 +414,19 @@ import vit.khudenko.android.fsm.StateMachine
      */
     @Synchronized
     fun getSessionRecords(): List&lt;SessionRecord&lt;State&gt;&gt; {
-<span class="fc bfc" id="L413" title="All 2 branches covered.">        return if (ensureInitialized(&quot;getSessionRecords&quot;)) {</span>
-<span class="fc" id="L414">            val sessionRecords = sessionsMap.entries.map {</span>
-<span class="fc" id="L415">                SessionRecord(sessionId = it.key, state = it.value.stateMachine.getCurrentState())</span>
-<span class="fc" id="L416">            }.toMutableList()</span>
-<span class="fc bfc" id="L417" title="All 2 branches covered.">            if (mode.verbose) {</span>
-<span class="fc" id="L418">                val dump = sessionRecords.joinToString(</span>
-<span class="fc" id="L419">                    prefix = &quot;[&quot;, postfix = &quot;]&quot;</span>
-<span class="fc" id="L420">                ) { (sessionId, state) -&gt; &quot;{ '${sessionId}': $state }&quot; }</span>
-<span class="fc" id="L421">                logger.d(logTag, &quot;getSessionRecords: $dump&quot;)</span>
+<span class="fc bfc" id="L417" title="All 2 branches covered.">        return if (ensureInitialized(&quot;getSessionRecords&quot;)) {</span>
+<span class="fc" id="L418">            val sessionRecords = sessionsMap.entries.map {</span>
+<span class="fc" id="L419">                SessionRecord(sessionId = it.key, state = it.value.stateMachine.getCurrentState())</span>
+<span class="fc" id="L420">            }.toMutableList()</span>
+<span class="fc bfc" id="L421" title="All 2 branches covered.">            if (mode.verbose) {</span>
+<span class="fc" id="L422">                val dump = sessionRecords.joinToString(</span>
+<span class="fc" id="L423">                    prefix = &quot;[&quot;, postfix = &quot;]&quot;</span>
+<span class="fc" id="L424">                ) { (sessionId, state) -&gt; &quot;{ '${sessionId}': $state }&quot; }</span>
+<span class="fc" id="L425">                logger.d(logTag, &quot;getSessionRecords: $dump&quot;)</span>
             }
-<span class="fc" id="L423">            sessionRecords</span>
+<span class="fc" id="L427">            sessionRecords</span>
         } else {
-<span class="fc" id="L425">            emptyList()</span>
+<span class="fc" id="L429">            emptyList()</span>
         }
     }
 
@@ -451,37 +455,37 @@ import vit.khudenko.android.fsm.StateMachine
      */
     @Synchronized
     fun trackSession(sessionId: SessionId, state: State) {
-<span class="fc bfc" id="L454" title="All 2 branches covered.">        if (!ensureInitialized(&quot;trackSession&quot;)) {</span>
-<span class="fc" id="L455">            return</span>
+<span class="fc bfc" id="L458" title="All 2 branches covered.">        if (!ensureInitialized(&quot;trackSession&quot;)) {</span>
+<span class="fc" id="L459">            return</span>
         }
-<span class="fc bfc" id="L457" title="All 2 branches covered.">        if (mode.verbose) {</span>
-<span class="fc" id="L458">            logger.d(logTag, &quot;trackSession: sessionId = '${sessionId}', state = $state&quot;)</span>
+<span class="fc bfc" id="L461" title="All 2 branches covered.">        if (mode.verbose) {</span>
+<span class="fc" id="L462">            logger.d(logTag, &quot;trackSession: sessionId = '${sessionId}', state = $state&quot;)</span>
         }
-<span class="fc bfc" id="L460" title="All 2 branches covered.">        if (!ensureNotPersisting(&quot;trackSession&quot;)) {</span>
-<span class="fc" id="L461">            return</span>
+<span class="fc bfc" id="L464" title="All 2 branches covered.">        if (!ensureNotPersisting(&quot;trackSession&quot;)) {</span>
+<span class="fc" id="L465">            return</span>
         }
-<span class="fc bfc" id="L463" title="All 2 branches covered.">        if (sessionsMap.contains(sessionId)) {</span>
-<span class="fc" id="L464">            logger.w(logTag, &quot;trackSession: session with ID '${sessionId}' already exists&quot;)</span>
+<span class="fc bfc" id="L467" title="All 2 branches covered.">        if (sessionsMap.contains(sessionId)) {</span>
+<span class="fc" id="L468">            logger.w(logTag, &quot;trackSession: session with ID '${sessionId}' already exists&quot;)</span>
         } else {
-<span class="fc bfc" id="L466" title="All 2 branches covered.">            if (state in autoUntrackStates) {</span>
-<span class="fc" id="L467">                val explanation = &quot;session with ID '${sessionId}' is in auto-untrack state ($state)&quot;</span>
-<span class="fc bfc" id="L468" title="All 4 branches covered.">                require(mode.strict.not()) { &quot;Unable to track session: $explanation&quot; }</span>
-<span class="fc" id="L469">                logger.e(logTag, &quot;trackSession: $explanation, rejecting this session&quot;)</span>
+<span class="fc bfc" id="L470" title="All 2 branches covered.">            if (state in autoUntrackStates) {</span>
+<span class="fc" id="L471">                val explanation = &quot;session with ID '${sessionId}' is in auto-untrack state ($state)&quot;</span>
+<span class="fc bfc" id="L472" title="All 4 branches covered.">                require(mode.strict.not()) { &quot;Unable to track session: $explanation&quot; }</span>
+<span class="fc" id="L473">                logger.e(logTag, &quot;trackSession: $explanation, rejecting this session&quot;)</span>
             } else {
-<span class="fc" id="L471">                val sessionRecord = SessionRecord(sessionId, state)</span>
-<span class="fc" id="L472">                val stateMachine = try {</span>
-<span class="fc" id="L473">                    setupSessionStateMachine(sessionRecord)</span>
-<span class="fc" id="L474">                } catch (e: Exception) {</span>
-<span class="fc" id="L475">                    throw RuntimeException(</span>
-<span class="fc" id="L476">                        &quot;$logTag failed to track session: error creating ${StateMachine::class.java.simpleName}&quot;, e</span>
+<span class="fc" id="L475">                val sessionRecord = SessionRecord(sessionId, state)</span>
+<span class="fc" id="L476">                val stateMachine = try {</span>
+<span class="fc" id="L477">                    setupSessionStateMachine(sessionRecord)</span>
+<span class="fc" id="L478">                } catch (e: Exception) {</span>
+<span class="fc" id="L479">                    throw RuntimeException(</span>
+<span class="fc" id="L480">                        &quot;$logTag failed to track session: error creating ${StateMachine::class.java.simpleName}&quot;, e</span>
                     )
                 }
-<span class="fc" id="L479">                doPersistAction { sessionTrackerStorage.createSessionRecord(sessionRecord) }</span>
-<span class="fc" id="L480">                sessionsMap[sessionId] = SessionInfo(stateMachine)</span>
-<span class="fc" id="L481">                listener.onSessionTrackingStarted(this@SessionTracker, sessionRecord)</span>
+<span class="fc" id="L483">                doPersistAction { sessionTrackerStorage.createSessionRecord(sessionRecord) }</span>
+<span class="fc" id="L484">                sessionsMap[sessionId] = SessionInfo(stateMachine)</span>
+<span class="fc" id="L485">                listener.onSessionTrackingStarted(this@SessionTracker, sessionRecord)</span>
             }
         }
-<span class="fc" id="L484">    }</span>
+<span class="fc" id="L488">    }</span>
 
     /**
      * Stops tracking a session with specified `sessionId`, removes corresponding session record from persistent storage
@@ -505,27 +509,27 @@ import vit.khudenko.android.fsm.StateMachine
      */
     @Synchronized
     fun untrackSession(sessionId: SessionId) {
-<span class="fc bfc" id="L508" title="All 2 branches covered.">        if (!ensureInitialized(&quot;untrackSession&quot;)) {</span>
-<span class="fc" id="L509">            return</span>
+<span class="fc bfc" id="L512" title="All 2 branches covered.">        if (!ensureInitialized(&quot;untrackSession&quot;)) {</span>
+<span class="fc" id="L513">            return</span>
         }
-<span class="fc bfc" id="L511" title="All 2 branches covered.">        if (mode.verbose) {</span>
-<span class="fc" id="L512">            logger.d(logTag, &quot;untrackSession: sessionId = '${sessionId}'&quot;)</span>
+<span class="fc bfc" id="L515" title="All 2 branches covered.">        if (mode.verbose) {</span>
+<span class="fc" id="L516">            logger.d(logTag, &quot;untrackSession: sessionId = '${sessionId}'&quot;)</span>
         }
-<span class="fc bfc" id="L514" title="All 2 branches covered.">        if (!ensureNotPersisting(&quot;untrackSession&quot;)) {</span>
-<span class="fc" id="L515">            return</span>
+<span class="fc bfc" id="L518" title="All 2 branches covered.">        if (!ensureNotPersisting(&quot;untrackSession&quot;)) {</span>
+<span class="fc" id="L519">            return</span>
         }
-<span class="fc" id="L517">        val sessionInfo = sessionsMap[sessionId]</span>
-<span class="fc bfc" id="L518" title="All 2 branches covered.">        if (sessionInfo == null) {</span>
-<span class="fc" id="L519">            logger.d(logTag, &quot;untrackSession: no session with ID '$sessionId' found&quot;)</span>
+<span class="fc" id="L521">        val sessionInfo = sessionsMap[sessionId]</span>
+<span class="fc bfc" id="L522" title="All 2 branches covered.">        if (sessionInfo == null) {</span>
+<span class="fc" id="L523">            logger.d(logTag, &quot;untrackSession: no session with ID '$sessionId' found&quot;)</span>
         } else {
-<span class="fc bfc" id="L521" title="All 2 branches covered.">            if (sessionInfo.isUntracking) {</span>
-<span class="fc" id="L522">                logger.w(logTag, &quot;untrackSession: session with ID '$sessionId' is already untracking&quot;)</span>
+<span class="fc bfc" id="L525" title="All 2 branches covered.">            if (sessionInfo.isUntracking) {</span>
+<span class="fc" id="L526">                logger.w(logTag, &quot;untrackSession: session with ID '$sessionId' is already untracking&quot;)</span>
             } else {
-<span class="fc" id="L524">                sessionsMap[sessionId] = sessionInfo.copy(isUntracking = true)</span>
-<span class="fc" id="L525">                doUntrackSession(sessionId, sessionInfo.stateMachine)</span>
+<span class="fc" id="L528">                sessionsMap[sessionId] = sessionInfo.copy(isUntracking = true)</span>
+<span class="fc" id="L529">                doUntrackSession(sessionId, sessionInfo.stateMachine)</span>
             }
         }
-<span class="fc" id="L528">    }</span>
+<span class="fc" id="L532">    }</span>
 
     /**
      * Stops tracking all currently tracked sessions, removes session records from persistent storage (via
@@ -547,34 +551,34 @@ import vit.khudenko.android.fsm.StateMachine
      */
     @Synchronized
     fun untrackAllSessions() {
-<span class="fc bfc" id="L550" title="All 2 branches covered.">        if (!ensureInitialized(&quot;untrackAllSessions&quot;)) {</span>
-<span class="fc" id="L551">            return</span>
+<span class="fc bfc" id="L554" title="All 2 branches covered.">        if (!ensureInitialized(&quot;untrackAllSessions&quot;)) {</span>
+<span class="fc" id="L555">            return</span>
         }
-<span class="fc bfc" id="L553" title="All 2 branches covered.">        if (!ensureNotPersisting(&quot;untrackAllSessions&quot;)) {</span>
-<span class="fc" id="L554">            return</span>
+<span class="fc bfc" id="L557" title="All 2 branches covered.">        if (!ensureNotPersisting(&quot;untrackAllSessions&quot;)) {</span>
+<span class="fc" id="L558">            return</span>
         }
-<span class="fc bfc" id="L556" title="All 2 branches covered.">        if (sessionsMap.isEmpty()) {</span>
-<span class="fc bfc" id="L557" title="All 2 branches covered.">            if (mode.verbose) {</span>
-<span class="fc" id="L558">                logger.d(logTag, &quot;untrackAllSessions: no sessions found&quot;)</span>
+<span class="fc bfc" id="L560" title="All 2 branches covered.">        if (sessionsMap.isEmpty()) {</span>
+<span class="fc bfc" id="L561" title="All 2 branches covered.">            if (mode.verbose) {</span>
+<span class="fc" id="L562">                logger.d(logTag, &quot;untrackAllSessions: no sessions found&quot;)</span>
             }
         } else {
-<span class="fc bfc" id="L561" title="All 2 branches covered.">            if (mode.verbose) {</span>
-<span class="fc" id="L562">                logger.d(logTag, &quot;untrackAllSessions&quot;)</span>
+<span class="fc bfc" id="L565" title="All 2 branches covered.">            if (mode.verbose) {</span>
+<span class="fc" id="L566">                logger.d(logTag, &quot;untrackAllSessions&quot;)</span>
             }
 
-<span class="fc" id="L565">            doPersistAction { sessionTrackerStorage.deleteAllSessionRecords() }</span>
+<span class="fc" id="L569">            doPersistAction { sessionTrackerStorage.deleteAllSessionRecords() }</span>
 
-<span class="fc" id="L567">            sessionsMap.values.forEach { it.stateMachine.removeAllListeners() }</span>
+<span class="fc" id="L571">            sessionsMap.values.forEach { it.stateMachine.removeAllListeners() }</span>
 
-<span class="fc" id="L569">            val sessionRecords = sessionsMap.entries.map { (sessionId, sessionInfo) -&gt;</span>
-<span class="fc" id="L570">                SessionRecord(sessionId, sessionInfo.stateMachine.getCurrentState())</span>
+<span class="fc" id="L573">            val sessionRecords = sessionsMap.entries.map { (sessionId, sessionInfo) -&gt;</span>
+<span class="fc" id="L574">                SessionRecord(sessionId, sessionInfo.stateMachine.getCurrentState())</span>
             }
 
-<span class="fc" id="L573">            sessionsMap.clear()</span>
+<span class="fc" id="L577">            sessionsMap.clear()</span>
 
-<span class="fc" id="L575">            listener.onAllSessionsTrackingStopped(this@SessionTracker, sessionRecords)</span>
+<span class="fc" id="L579">            listener.onAllSessionsTrackingStopped(this@SessionTracker, sessionRecords)</span>
         }
-<span class="fc" id="L577">    }</span>
+<span class="fc" id="L581">    }</span>
 
     /**
      * Attempts to apply the specified [`event`][event] to the specified session. Whether the event actually causes
@@ -603,129 +607,129 @@ import vit.khudenko.android.fsm.StateMachine
      */
     @Synchronized
     fun consumeEvent(sessionId: SessionId, event: Event): Boolean {
-<span class="fc bfc" id="L606" title="All 2 branches covered.">        if (!ensureInitialized(&quot;consumeEvent&quot;)) {</span>
-<span class="fc" id="L607">            return false</span>
+<span class="fc bfc" id="L610" title="All 2 branches covered.">        if (!ensureInitialized(&quot;consumeEvent&quot;)) {</span>
+<span class="fc" id="L611">            return false</span>
         }
-<span class="fc bfc" id="L609" title="All 2 branches covered.">        if (mode.verbose) {</span>
-<span class="fc" id="L610">            logger.d(logTag, &quot;consumeEvent: sessionId = '$sessionId', event = '$event'&quot;)</span>
+<span class="fc bfc" id="L613" title="All 2 branches covered.">        if (mode.verbose) {</span>
+<span class="fc" id="L614">            logger.d(logTag, &quot;consumeEvent: sessionId = '$sessionId', event = '$event'&quot;)</span>
         }
-<span class="fc bfc" id="L612" title="All 2 branches covered.">        if (!ensureNotPersisting(&quot;consumeEvent&quot;)) {</span>
-<span class="fc" id="L613">            return false</span>
+<span class="fc bfc" id="L616" title="All 2 branches covered.">        if (!ensureNotPersisting(&quot;consumeEvent&quot;)) {</span>
+<span class="fc" id="L617">            return false</span>
         }
-<span class="fc" id="L615">        val sessionInfo = sessionsMap[sessionId]</span>
-<span class="fc bfc" id="L616" title="All 2 branches covered.">        if (sessionInfo == null) {</span>
-<span class="fc" id="L617">            logger.w(logTag, &quot;consumeEvent: no session with ID '$sessionId' found&quot;)</span>
+<span class="fc" id="L619">        val sessionInfo = sessionsMap[sessionId]</span>
+<span class="fc bfc" id="L620" title="All 2 branches covered.">        if (sessionInfo == null) {</span>
+<span class="fc" id="L621">            logger.w(logTag, &quot;consumeEvent: no session with ID '$sessionId' found&quot;)</span>
         } else {
-<span class="fc bfc" id="L619" title="All 2 branches covered.">            if (sessionInfo.isUntracking) {</span>
-<span class="fc" id="L620">                logger.w(logTag, &quot;consumeEvent: event = '$event', session with ID '$sessionId' is already untracking&quot;)</span>
-<span class="fc bfc" id="L621" title="All 2 branches covered.">            } else if (sessionInfo.stateMachine.consumeEvent(event)) {</span>
-<span class="fc" id="L622">                return true</span>
+<span class="fc bfc" id="L623" title="All 2 branches covered.">            if (sessionInfo.isUntracking) {</span>
+<span class="fc" id="L624">                logger.w(logTag, &quot;consumeEvent: event = '$event', session with ID '$sessionId' is already untracking&quot;)</span>
+<span class="fc bfc" id="L625" title="All 2 branches covered.">            } else if (sessionInfo.stateMachine.consumeEvent(event)) {</span>
+<span class="fc" id="L626">                return true</span>
             }
-<span class="fc bfc" id="L624" title="All 2 branches covered.">            if (mode.verbose) {</span>
-<span class="fc" id="L625">                logger.d(</span>
-<span class="fc" id="L626">                    logTag, &quot;consumeEvent: event '$event' was ignored for session with ID '$sessionId' &quot; +</span>
-<span class="fc" id="L627">                            &quot;in state ${sessionInfo.stateMachine.getCurrentState()}, &quot; +</span>
-<span class="fc" id="L628">                            &quot;isUntracking = ${sessionInfo.isUntracking}&quot;</span>
+<span class="fc bfc" id="L628" title="All 2 branches covered.">            if (mode.verbose) {</span>
+<span class="fc" id="L629">                logger.d(</span>
+<span class="fc" id="L630">                    logTag, &quot;consumeEvent: event '$event' was ignored for session with ID '$sessionId' &quot; +</span>
+<span class="fc" id="L631">                            &quot;in state ${sessionInfo.stateMachine.getCurrentState()}, &quot; +</span>
+<span class="fc" id="L632">                            &quot;isUntracking = ${sessionInfo.isUntracking}&quot;</span>
                 )
             }
         }
-<span class="fc" id="L632">        return false</span>
+<span class="fc" id="L636">        return false</span>
     }
 
     private fun doUntrackSession(sessionId: SessionId, stateMachine: StateMachine&lt;Event, State&gt;) {
-<span class="fc" id="L636">        stateMachine.removeAllListeners()</span>
-<span class="fc" id="L637">        doPersistAction { sessionTrackerStorage.deleteSessionRecord(sessionId) }</span>
-<span class="fc" id="L638">        sessionsMap.remove(sessionId)</span>
-<span class="fc" id="L639">        listener.onSessionTrackingStopped(this@SessionTracker, SessionRecord(sessionId, stateMachine.getCurrentState()))</span>
-<span class="fc" id="L640">    }</span>
+<span class="fc" id="L640">        stateMachine.removeAllListeners()</span>
+<span class="fc" id="L641">        doPersistAction { sessionTrackerStorage.deleteSessionRecord(sessionId) }</span>
+<span class="fc" id="L642">        sessionsMap.remove(sessionId)</span>
+<span class="fc" id="L643">        listener.onSessionTrackingStopped(this@SessionTracker, SessionRecord(sessionId, stateMachine.getCurrentState()))</span>
+<span class="fc" id="L644">    }</span>
 
     private fun ensureInitialized(method: String): Boolean {
-<span class="fc bfc" id="L643" title="All 2 branches covered.">        if (!initialized) {</span>
-<span class="fc" id="L644">            val explanation = &quot;$logTag must be initialized before calling its #$method method&quot;</span>
-<span class="fc bfc" id="L645" title="All 2 branches covered.">            if (mode.strict) {</span>
-<span class="fc" id="L646">                throw RuntimeException(explanation)</span>
+<span class="fc bfc" id="L647" title="All 2 branches covered.">        if (!initialized) {</span>
+<span class="fc" id="L648">            val explanation = &quot;$logTag must be initialized before calling its #$method method&quot;</span>
+<span class="fc bfc" id="L649" title="All 2 branches covered.">            if (mode.strict) {</span>
+<span class="fc" id="L650">                throw RuntimeException(explanation)</span>
             } else {
-<span class="fc" id="L648">                logger.e(logTag, explanation)</span>
+<span class="fc" id="L652">                logger.e(logTag, explanation)</span>
             }
         }
-<span class="fc" id="L651">        return initialized</span>
+<span class="fc" id="L655">        return initialized</span>
     }
 
     private fun ensureNotPersisting(method: String): Boolean {
-<span class="fc bfc" id="L655" title="All 2 branches covered.">        if (persisting) {</span>
-<span class="fc" id="L656">            val explanation = &quot;$method: misuse detected, accessing &quot; +</span>
-<span class="fc" id="L657">                    &quot;$logTag from ${ISessionTrackerStorage::class.java.simpleName} callbacks is not allowed&quot;</span>
-<span class="fc bfc" id="L658" title="All 2 branches covered.">            if (mode.strict) {</span>
-<span class="fc" id="L659">                throw RuntimeException(explanation)</span>
+<span class="fc bfc" id="L659" title="All 2 branches covered.">        if (persisting) {</span>
+<span class="fc" id="L660">            val explanation = &quot;$method: misuse detected, accessing &quot; +</span>
+<span class="fc" id="L661">                    &quot;$logTag from ${ISessionTrackerStorage::class.java.simpleName} callbacks is not allowed&quot;</span>
+<span class="fc bfc" id="L662" title="All 2 branches covered.">            if (mode.strict) {</span>
+<span class="fc" id="L663">                throw RuntimeException(explanation)</span>
             } else {
-<span class="fc" id="L661">                logger.e(logTag, explanation)</span>
+<span class="fc" id="L665">                logger.e(logTag, explanation)</span>
             }
         }
-<span class="fc bfc" id="L664" title="All 2 branches covered.">        return !persisting</span>
+<span class="fc bfc" id="L668" title="All 2 branches covered.">        return !persisting</span>
     }
 
     private fun setupSessionStateMachine(sessionRecord: SessionRecord&lt;State&gt;): StateMachine&lt;Event, State&gt; {
-<span class="fc" id="L668">        val (sessionId, state) = sessionRecord</span>
+<span class="fc" id="L672">        val (sessionId, state) = sessionRecord</span>
 
-<span class="fc" id="L670">        val builder = StateMachine.Builder&lt;Event, State&gt;().setInitialState(state)</span>
+<span class="fc" id="L674">        val builder = StateMachine.Builder&lt;Event, State&gt;().setInitialState(state)</span>
 
-<span class="fc" id="L672">        sessionStateTransitionsSupplier.getStateTransitions(sessionId)</span>
-<span class="fc" id="L673">            .forEach { transition -&gt;</span>
-<span class="fc" id="L674">                builder.addTransition(</span>
-<span class="fc" id="L675">                    StateMachine.Transition(transition.event, transition.statePath)</span>
+<span class="fc" id="L676">        sessionStateTransitionsSupplier.getStateTransitions(sessionId)</span>
+<span class="fc" id="L677">            .forEach { transition -&gt;</span>
+<span class="fc" id="L678">                builder.addTransition(</span>
+<span class="fc" id="L679">                    StateMachine.Transition(transition.event, transition.statePath)</span>
                 )
-<span class="fc" id="L677">            }</span>
+<span class="fc" id="L681">            }</span>
 
-<span class="fc" id="L679">        val stateMachine = builder.build()</span>
+<span class="fc" id="L683">        val stateMachine = builder.build()</span>
 
-<span class="fc" id="L681">        stateMachine.addListener(object : StateMachine.Listener&lt;State&gt; {</span>
+<span class="fc" id="L685">        stateMachine.addListener(object : StateMachine.Listener&lt;State&gt; {</span>
             override fun onStateChanged(oldState: State, newState: State) {
-<span class="fc" id="L683">                val baseLogMessage = &quot;onStateChanged: '$oldState' -&gt; '$newState', sessionId = '${sessionId}'&quot;</span>
+<span class="fc" id="L687">                val baseLogMessage = &quot;onStateChanged: '$oldState' -&gt; '$newState', sessionId = '${sessionId}'&quot;</span>
 
-<span class="fc" id="L685">                val sessionInfo = sessionsMap[sessionId]</span>
+<span class="fc" id="L689">                val sessionInfo = sessionsMap[sessionId]</span>
 
-<span class="pc bpc" id="L687" title="1 of 2 branches missed.">                checkNotNull(sessionInfo) { &quot;$baseLogMessage - session not found&quot; }</span>
-<span class="pc bpc" id="L688" title="2 of 4 branches missed.">                check(sessionInfo.isUntracking.not()) { &quot;$baseLogMessage - session is untracking&quot; }</span>
+<span class="pc bpc" id="L691" title="1 of 2 branches missed.">                checkNotNull(sessionInfo) { &quot;$baseLogMessage - session not found&quot; }</span>
+<span class="pc bpc" id="L692" title="2 of 4 branches missed.">                check(sessionInfo.isUntracking.not()) { &quot;$baseLogMessage - session is untracking&quot; }</span>
 
-<span class="fc bfc" id="L690" title="All 2 branches covered.">                if (mode.verbose) {</span>
-<span class="fc" id="L691">                    logger.d(logTag, baseLogMessage)</span>
+<span class="fc bfc" id="L694" title="All 2 branches covered.">                if (mode.verbose) {</span>
+<span class="fc" id="L695">                    logger.d(logTag, baseLogMessage)</span>
                 }
 
-<span class="fc" id="L694">                val updatedSessionRecord = SessionRecord(sessionId, newState)</span>
+<span class="fc" id="L698">                val updatedSessionRecord = SessionRecord(sessionId, newState)</span>
 
-<span class="fc bfc" id="L696" title="All 2 branches covered.">                if (newState in autoUntrackStates) {</span>
-<span class="fc" id="L697">                    logger.d(logTag, &quot;$baseLogMessage, going to auto-untrack session..&quot;)</span>
-<span class="fc" id="L698">                    val updatedSessionInfo = sessionInfo.copy(isUntracking = true)</span>
-<span class="fc" id="L699">                    sessionsMap[sessionId] = updatedSessionInfo</span>
-<span class="fc" id="L700">                    stateMachine.removeAllListeners()</span>
-<span class="fc" id="L701">                    listener.onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)</span>
-<span class="fc bfc" id="L702" title="All 2 branches covered.">                    if (sessionsMap.containsKey(sessionId)) {</span>
-<span class="fc" id="L703">                        doUntrackSession(sessionId, updatedSessionInfo.stateMachine)</span>
+<span class="fc bfc" id="L700" title="All 2 branches covered.">                if (newState in autoUntrackStates) {</span>
+<span class="fc" id="L701">                    logger.d(logTag, &quot;$baseLogMessage, going to auto-untrack session..&quot;)</span>
+<span class="fc" id="L702">                    val updatedSessionInfo = sessionInfo.copy(isUntracking = true)</span>
+<span class="fc" id="L703">                    sessionsMap[sessionId] = updatedSessionInfo</span>
+<span class="fc" id="L704">                    stateMachine.removeAllListeners()</span>
+<span class="fc" id="L705">                    listener.onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)</span>
+<span class="fc bfc" id="L706" title="All 2 branches covered.">                    if (sessionsMap.containsKey(sessionId)) {</span>
+<span class="fc" id="L707">                        doUntrackSession(sessionId, updatedSessionInfo.stateMachine)</span>
                     }
                 } else {
-<span class="fc" id="L706">                    doPersistAction { sessionTrackerStorage.updateSessionRecord(updatedSessionRecord) }</span>
-<span class="fc" id="L707">                    listener.onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)</span>
+<span class="fc" id="L710">                    doPersistAction { sessionTrackerStorage.updateSessionRecord(updatedSessionRecord) }</span>
+<span class="fc" id="L711">                    listener.onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)</span>
                 }
-<span class="fc" id="L709">            }</span>
+<span class="fc" id="L713">            }</span>
         })
 
-<span class="fc" id="L712">        return stateMachine</span>
+<span class="fc" id="L716">        return stateMachine</span>
     }
 
     private fun doPersistAction(action: () -&gt; Unit) {
-<span class="fc" id="L716">        persisting = true</span>
-<span class="fc" id="L717">        try {</span>
-<span class="fc" id="L718">            action.invoke()</span>
+<span class="fc" id="L720">        persisting = true</span>
+<span class="fc" id="L721">        try {</span>
+<span class="fc" id="L722">            action.invoke()</span>
         } finally {
-<span class="fc" id="L720">            persisting = false</span>
+<span class="fc" id="L724">            persisting = false</span>
         }
-<span class="fc" id="L722">    }</span>
+<span class="fc" id="L726">    }</span>
 
-<span class="fc" id="L724">    private data class SessionInfo&lt;Event : Enum&lt;Event&gt;, State : Enum&lt;State&gt;&gt;(</span>
-<span class="fc" id="L725">        val stateMachine: StateMachine&lt;Event, State&gt;,</span>
-<span class="fc" id="L726">        val isUntracking: Boolean = false</span>
-    )
-}
+<span class="fc" id="L728">    private data class SessionInfo&lt;Event : Enum&lt;Event&gt;, State : Enum&lt;State&gt;&gt;(</span>
+<span class="fc" id="L729">        val stateMachine: StateMachine&lt;Event, State&gt;,</span>
+<span class="fc" id="L730">        val isUntracking: Boolean = false</span>
+<span class="fc" id="L731">    )</span>
+<span class="fc" id="L732">}</span>
 
 typealias SessionId = String
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

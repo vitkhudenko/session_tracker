@@ -1,8 +1,7 @@
 package vit.khudenko.android.sessiontracker.sample.koin
 
-import android.app.Application
 import android.util.Log
-import org.koin.android.ext.android.getKoin
+import org.koin.core.Koin
 import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
 import vit.khudenko.android.sessiontracker.SessionId
@@ -12,7 +11,7 @@ import vit.khudenko.android.sessiontracker.sample.koin.Session.Event
 import vit.khudenko.android.sessiontracker.sample.koin.Session.State
 import vit.khudenko.android.sessiontracker.sample.koin.di.SCOPE_ID_USER_SESSION
 
-class SessionTrackerListener(private val app: Application) : SessionTracker.Listener<Event, State> {
+class SessionTrackerListener(private val koinProvider: () -> Koin) : SessionTracker.Listener<Event, State> {
 
     companion object {
         private val TAG = SessionTrackerListener::class.java.simpleName
@@ -63,8 +62,8 @@ class SessionTrackerListener(private val app: Application) : SessionTracker.List
         val (sessionId, newState) = sessionRecord
         Log.d(TAG, "onSessionStateChanged: session ID = ${sessionId}, states = ($oldState -> $newState)")
         when (newState) {
-            State.INACTIVE -> closeKoinScope(sessionId)
             State.ACTIVE -> createKoinScope(sessionId)
+            State.INACTIVE,
             State.FORGOTTEN -> closeKoinScope(sessionId)
         }
     }
@@ -92,7 +91,7 @@ class SessionTrackerListener(private val app: Application) : SessionTracker.List
             Log.w(TAG, "createKoinScope: scope already exists for session with ID '$sessionId'")
         } else {
             Log.d(TAG, "createKoinScope: session ID = '$sessionId'")
-            scope = app.getKoin().createScope(
+            scope = koinProvider().createScope(
                 qualifier = named(SCOPE_ID_USER_SESSION),
                 scopeId = sessionId
             )

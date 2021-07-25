@@ -21,7 +21,7 @@ allprojects {
 At a module level `build.gradle`, add the following dependency:
 
 ```groovy
-implementation 'com.github.vitkhudenko:session_tracker:0.4.5'
+implementation 'com.github.vitkhudenko:session_tracker:1.0.0'
 ```
 
 ## Contract description
@@ -34,7 +34,7 @@ with all its possible states.
 ### Session tracking state VS. session state
 
 In SessionTracker framework, sessions are represented by session tracking records - instances of
-`SessionRecord`. It is an immutable data structure, that has just 2 fields - session ID and
+`SessionRecord`. It is an immutable data structure of 2 fields - session ID and
 session tracking state.
 
 Note, there are two (partially intersecting) types of session state:
@@ -94,7 +94,7 @@ session from `ACTIVE` to `INACTIVE` state).
 ### Session tracking
 
 In order to make SessionTracker ready to function it should be initialized first. The most appropriate place for
-`initialize()` call is `android.app.Application.onCreate()`.
+`initialize(sessionTrackerListener: Listener<Event, State>)` call is `android.app.Application.onCreate()`.
 
 Suppose your user hits "Login" button, your app authenticates user and creates a session. In order to make
 use of SessionTracker the session should be "attached" to SessionTracker:
@@ -128,7 +128,7 @@ the same `INACTIVE` state.
 - `onSessionTrackerInitialized(sessionTracker: SessionTracker<Event, State>, sessionRecords: List<SessionRecord<State>>)`
 
     SessionTracker has added sessions to the list of tracked sessions.
-    This happens as a result of calling `SessionTracker.initialize()`.
+    This happens as a result of calling `SessionTracker.initialize(sessionTrackerListener: Listener<Event, State>)`.
     This callback is the right place to create any resources for the sessions (a DB connection, a DI scope, etc.).
 
 - `onSessionTrackingStarted(sessionTracker: SessionTracker<Event, State>, sessionRecord: SessionRecord<State>)`

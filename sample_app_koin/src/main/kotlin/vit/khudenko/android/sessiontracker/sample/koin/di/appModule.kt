@@ -1,6 +1,7 @@
 package vit.khudenko.android.sessiontracker.sample.koin.di
 
 import android.content.Context
+import org.koin.android.ext.android.getKoin
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.qualifier.named
@@ -30,10 +31,13 @@ val appModule = module {
                     Transition(event = Event.LOGOUT_AND_FORGET, statePath = listOf(State.ACTIVE, State.FORGOTTEN))
                 )
             },
-            listener = SessionTrackerListener(androidApplication()),
             autoUntrackStates = setOf(State.FORGOTTEN),
             mode = SessionTracker.Mode.STRICT_VERBOSE
         )
+    }
+
+    single {
+        SessionTrackerListener { androidApplication().getKoin() }
     }
 
 }
