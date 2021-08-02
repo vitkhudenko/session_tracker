@@ -28,7 +28,7 @@ package vit.khudenko.android.sessiontracker
  * @param [Event] event parameter of enum type.
  * @param [State] state parameter of enum type.
  */
-interface ISessionStateTransitionsSupplier<Event : Enum<Event>, State : Enum<State>> {
+fun interface ISessionStateTransitionsSupplier<Event : Enum<Event>, State : Enum<State>> {
 
     /**
      * @return a list of transitions to configure session state machine with.
