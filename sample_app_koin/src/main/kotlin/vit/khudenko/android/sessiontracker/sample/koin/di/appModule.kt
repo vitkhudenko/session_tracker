@@ -24,8 +24,8 @@ val appModule = module {
     single {
         SessionTracker(
             sessionTrackerStorage = SessionTrackerStorage(get(named(DI_NAME_SESSION_TRACKER_SHARED_PREFERENCES))),
-            sessionStateTransitionsSupplier = object : ISessionStateTransitionsSupplier<Event, State> {
-                override fun getStateTransitions(sessionId: SessionId) = listOf(
+            sessionStateTransitionsSupplier = {
+                listOf(
                     Transition(event = Event.LOGIN, statePath = listOf(State.INACTIVE, State.ACTIVE)),
                     Transition(event = Event.LOGOUT, statePath = listOf(State.ACTIVE, State.INACTIVE)),
                     Transition(event = Event.LOGOUT_AND_FORGET, statePath = listOf(State.ACTIVE, State.FORGOTTEN))
