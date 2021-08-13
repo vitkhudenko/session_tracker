@@ -1,14 +1,15 @@
 package com.chumarin.stanislav.sample_app_dagger.di;
 
+import android.content.Context;
+
 import androidx.annotation.NonNull;
 
 import com.chumarin.stanislav.sample_app_dagger.App;
 import com.chumarin.stanislav.sample_app_dagger.Session;
 import com.chumarin.stanislav.sample_app_dagger.SessionTrackerListener;
-import com.chumarin.stanislav.sample_app_dagger.SessionTrackerStorage;
 
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.EnumSet;
 
 import javax.inject.Singleton;
 
@@ -22,6 +23,8 @@ import vit.khudenko.android.sessiontracker.Transition;
 @Module
 class AppModule {
 
+    private static final String PREFS_FILENAME = "session_tracker_storage";
+
     @Provides
     @Singleton
     public SessionTracker<Session.Event, Session.State> provideSessionTracker(
@@ -31,9 +34,7 @@ class AppModule {
         return new SessionTracker<>(
                 sessionStorage,
                 stateTransitionsSupplier,
-                new HashSet<Session.State>() {{
-                    add(Session.State.FORGOTTEN);
-                }},
+                EnumSet.of(Session.State.FORGOTTEN),
                 SessionTracker.Mode.STRICT_VERBOSE,
                 new SessionTracker.Logger.DefaultImpl(),
                 "SessionTracker"
@@ -53,7 +54,10 @@ class AppModule {
     @Provides
     @Singleton
     public ISessionTrackerStorage<Session.State> sessionStorage(App app) {
-        return new SessionTrackerStorage(app);
+        return new ISessionTrackerStorage.SharedPrefsImpl<>(
+                app.getSharedPreferences(PREFS_FILENAME, Context.MODE_PRIVATE),
+                EnumSet.allOf(Session.State.class)
+        );
     }
 
     @Provides
