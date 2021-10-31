@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          xmlns:tools="http://schemas.android.com/tools"
-          package="vit.khudenko.android.sessiontracker.sample.koin">
+        xmlns:tools="http://schemas.android.com/tools"
+        package="vit.khudenko.android.sessiontracker.sample.koin">
 
     <application
             android:name=".App"
@@ -12,18 +12,20 @@
             android:supportsRtl="true"
             android:theme="@style/AppTheme"
             tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".SplashActivity">
+        <activity
+                android:name=".SplashActivity"
+                android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
                 android:name=".login.LoginActivity"
-                android:label="@string/title_activity_login"/>
+                android:label="@string/title_activity_login" />
         <activity
                 android:name=".MainActivity"
-                android:label="@string/title_activity_main"/>
+                android:label="@string/title_activity_main" />
     </application>
 
 </manifest>
