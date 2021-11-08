@@ -22,7 +22,6 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: MainViewModel by lazy {
         getKoin().getScope(scopeId = getSessionId()).getViewModel(
             qualifier = null,
-            state = emptyState(),
             owner = { ViewModelOwner.from(this, this) },
             parameters = null
         )
