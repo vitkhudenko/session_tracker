@@ -220,4 +220,4 @@ Typical simple SessionTracker usage implies being a singleton in your app.
 [sample_app_dagger]: https://github.com/vitkhudenko/session_tracker/tree/master/sample_app_dagger
 
 [test_summary]: https://htmlpreview.github.io/?https://github.com/vitkhudenko/session_tracker/blob/master/session_tracker_lib/reports/tests/testReleaseUnitTest/index.html
-[test_coverage]: https://htmlpreview.github.io/?https://github.com/vitkhudenko/session_tracker/blob/master/session_tracker_lib/reports/jacoco/jacocoUnitTestReport/html/index.html
+[test_coverage]: https://rawcdn.githack.com/vitkhudenko/session_tracker/27ed24335e067b8751eca54172614f9e1ff1a80e/session_tracker_lib/reports/jacoco/jacocoUnitTestReport/html/index.html
