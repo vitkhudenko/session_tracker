@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ISessionTrackerStorage.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">session_tracker_lib</a> &gt; <a href="index.source.html" class="el_package">vit.khudenko.android.sessiontracker</a> &gt; <span class="el_source">ISessionTrackerStorage.kt</span></div><h1>ISessionTrackerStorage.kt</h1><pre class="source lang-java linenums">package vit.khudenko.android.sessiontracker
+
+import android.annotation.SuppressLint
+import android.content.SharedPreferences
+import org.json.JSONArray
+import org.json.JSONObject
+import java.util.EnumSet
+
+/**
+ * Your app must assume `ISessionTrackerStorage` methods may be called by [`SessionTracker`][SessionTracker]
+ * while processing the calls made by your app to the `SessionTracker`.
+ *
+ * `SessionTracker` calls `ISessionTrackerStorage` synchronously from the threads your application calls
+ * `SessionTracker` from.
+ *
+ * `SessionTracker` implementation guarantees that `ISessionTrackerStorage` methods are never called concurrently.
+ */
+interface ISessionTrackerStorage&lt;State : Enum&lt;State&gt;&gt; {
+
+    /**
+     * This method is called by `SessionTracker` from within the
+     * [`SessionTracker.trackSession()`][SessionTracker.trackSession] call.
+     *
+     * The implementation must not defer actual persisting for future.
+     *
+     * @param sessionRecord [`SessionRecord`][SessionRecord]
+     */
+    fun createSessionRecord(sessionRecord: SessionRecord&lt;State&gt;)
+
+    /**
+     * This is called by `SessionTracker` from within the
+     * [`SessionTracker.initialize()`][SessionTracker.initialize] call.
+     *
+     * The implementation should read and create previously persisted (if any) list of [`SessionRecord`][SessionRecord]
+     * instances with corresponding states. If storage is empty, then an empty list should be returned.
+     */
+    fun readAllSessionRecords(): List&lt;SessionRecord&lt;State&gt;&gt;
+
+    /**
+     * This method is called by `SessionTracker` from within the
+     * [`SessionTracker.consumeEvent()`][SessionTracker.consumeEvent] call.
+     *
+     * The implementation must not defer actual persisting for future.
+     *
+     * @param sessionRecord [`SessionRecord`][SessionRecord]
+     */
+    fun updateSessionRecord(sessionRecord: SessionRecord&lt;State&gt;)
+
+    /**
+     * This method is called by `SessionTracker` from within the
+     * [`SessionTracker.untrackSession()`][SessionTracker.untrackSession] call.
+     *
+     * The implementation must not defer actual persisting for future.
+     *
+     * @param sessionId [`SessionId`][SessionId]
+     */
+    fun deleteSessionRecord(sessionId: SessionId)
+
+    /**
+     * This method is called by `SessionTracker` from within the
+     * [`SessionTracker.untrackAllSessions()`][SessionTracker.untrackAllSessions] call.
+     *
+     * The implementation must not defer actual persisting for future.
+     */
+    fun deleteAllSessionRecords()
+
+<span class="fc" id="L67">    class SharedPrefsImpl&lt;State : Enum&lt;State&gt;&gt;(</span>
+<span class="fc" id="L68">        private val prefs: SharedPreferences,</span>
+        stateEnumValues: EnumSet&lt;State&gt;,
+    ) : ISessionTrackerStorage&lt;State&gt; {
+
+        companion object {
+            private const val KEY_SESSION_RECORDS = &quot;session_records&quot;
+            private const val KEY_SESSION_ID = &quot;id&quot;
+            private const val KEY_SESSION_STATE = &quot;state&quot;
+        }
+
+<span class="fc" id="L78">        private val stateEnumValuesList: List&lt;State&gt; = stateEnumValues.toList()</span>
+
+        override fun readAllSessionRecords(): List&lt;SessionRecord&lt;State&gt;&gt; {
+<span class="fc" id="L81">            val sessionRecords = mutableListOf&lt;SessionRecord&lt;State&gt;&gt;()</span>
+<span class="fc" id="L82">            val jsonArray = JSONArray(prefs.getString(KEY_SESSION_RECORDS, &quot;[]&quot;))</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            for (i in 0 until jsonArray.length()) {</span>
+<span class="fc" id="L84">                val sessionRecord = jsonToSessionRecord(jsonArray.getJSONObject(i))</span>
+<span class="fc" id="L85">                sessionRecords.add(sessionRecord)</span>
+            }
+<span class="fc" id="L87">            return sessionRecords</span>
+        }
+
+        override fun createSessionRecord(sessionRecord: SessionRecord&lt;State&gt;) {
+<span class="fc" id="L91">            saveSessionRecords(</span>
+<span class="fc" id="L92">                readAllSessionRecords() + sessionRecord</span>
+            )
+<span class="fc" id="L94">        }</span>
+
+        override fun updateSessionRecord(sessionRecord: SessionRecord&lt;State&gt;) {
+<span class="fc" id="L97">            saveSessionRecords(</span>
+<span class="fc" id="L98">                readAllSessionRecords().map {</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">                    if (it.sessionId == sessionRecord.sessionId) {</span>
+<span class="fc" id="L100">                        sessionRecord</span>
+                    } else {
+<span class="fc" id="L102">                        it</span>
+                    }
+                }
+            )
+<span class="fc" id="L106">        }</span>
+
+        override fun deleteSessionRecord(sessionId: String) {
+<span class="fc" id="L109">            saveSessionRecords(</span>
+<span class="fc bfc" id="L110" title="All 4 branches covered.">                readAllSessionRecords().filter { it.sessionId != sessionId }</span>
+            )
+<span class="fc" id="L112">        }</span>
+
+        override fun deleteAllSessionRecords() {
+<span class="fc" id="L115">            saveSessionRecords(emptyList())</span>
+<span class="fc" id="L116">        }</span>
+
+        @SuppressLint(&quot;ApplySharedPref&quot;)
+        private fun saveSessionRecords(sessionRecords: List&lt;SessionRecord&lt;State&gt;&gt;) {
+<span class="fc" id="L120">            prefs.edit()</span>
+<span class="fc" id="L121">                .putString(</span>
+<span class="fc" id="L122">                    KEY_SESSION_RECORDS,</span>
+<span class="fc" id="L123">                    JSONArray(</span>
+<span class="fc" id="L124">                        sessionRecords.map { sessionRecordToJson(it) }</span>
+<span class="fc" id="L125">                    ).toString()</span>
+                )
+<span class="fc" id="L127">                .commit()</span>
+<span class="fc" id="L128">        }</span>
+
+        private fun sessionRecordToJson(sessionRecord: SessionRecord&lt;State&gt;): JSONObject {
+<span class="fc" id="L131">            return JSONObject(</span>
+<span class="fc" id="L132">                mapOf(</span>
+<span class="fc" id="L133">                    KEY_SESSION_ID to sessionRecord.sessionId,</span>
+<span class="fc" id="L134">                    KEY_SESSION_STATE to sessionRecord.state.ordinal</span>
+                )
+            )
+        }
+
+        private fun jsonToSessionRecord(json: JSONObject): SessionRecord&lt;State&gt; {
+<span class="fc" id="L140">            return SessionRecord(</span>
+<span class="fc" id="L141">                json.getString(KEY_SESSION_ID),</span>
+<span class="fc" id="L142">                stateEnumValuesList[json.getInt(KEY_SESSION_STATE)]</span>
+            )
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -482,7 +482,7 @@ import vit.khudenko.android.fsm.StateMachine
                 }
 <span class="fc" id="L483">                doPersistAction { sessionTrackerStorage.createSessionRecord(sessionRecord) }</span>
 <span class="fc" id="L484">                sessionsMap[sessionId] = SessionInfo(stateMachine)</span>
-<span class="fc" id="L485">                listener.onSessionTrackingStarted(this@SessionTracker, sessionRecord)</span>
+<span class="pc bpc" id="L485" title="1 of 2 branches missed.">                listener.onSessionTrackingStarted(this@SessionTracker, sessionRecord)</span>
             }
         }
 <span class="fc" id="L488">    }</span>
@@ -576,7 +576,7 @@ import vit.khudenko.android.fsm.StateMachine
 
 <span class="fc" id="L577">            sessionsMap.clear()</span>
 
-<span class="fc" id="L579">            listener.onAllSessionsTrackingStopped(this@SessionTracker, sessionRecords)</span>
+<span class="pc bpc" id="L579" title="1 of 2 branches missed.">            listener.onAllSessionsTrackingStopped(this@SessionTracker, sessionRecords)</span>
         }
 <span class="fc" id="L581">    }</span>
 
@@ -640,7 +640,7 @@ import vit.khudenko.android.fsm.StateMachine
 <span class="fc" id="L640">        stateMachine.removeAllListeners()</span>
 <span class="fc" id="L641">        doPersistAction { sessionTrackerStorage.deleteSessionRecord(sessionId) }</span>
 <span class="fc" id="L642">        sessionsMap.remove(sessionId)</span>
-<span class="fc" id="L643">        listener.onSessionTrackingStopped(this@SessionTracker, SessionRecord(sessionId, stateMachine.getCurrentState()))</span>
+<span class="pc bpc" id="L643" title="1 of 2 branches missed.">        listener.onSessionTrackingStopped(this@SessionTracker, SessionRecord(sessionId, stateMachine.getCurrentState()))</span>
 <span class="fc" id="L644">    }</span>
 
     private fun ensureInitialized(method: String): Boolean {
@@ -702,13 +702,13 @@ import vit.khudenko.android.fsm.StateMachine
 <span class="fc" id="L702">                    val updatedSessionInfo = sessionInfo.copy(isUntracking = true)</span>
 <span class="fc" id="L703">                    sessionsMap[sessionId] = updatedSessionInfo</span>
 <span class="fc" id="L704">                    stateMachine.removeAllListeners()</span>
-<span class="fc" id="L705">                    listener.onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)</span>
+<span class="pc bpc" id="L705" title="1 of 2 branches missed.">                    listener.onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)</span>
 <span class="fc bfc" id="L706" title="All 2 branches covered.">                    if (sessionsMap.containsKey(sessionId)) {</span>
 <span class="fc" id="L707">                        doUntrackSession(sessionId, updatedSessionInfo.stateMachine)</span>
                     }
                 } else {
 <span class="fc" id="L710">                    doPersistAction { sessionTrackerStorage.updateSessionRecord(updatedSessionRecord) }</span>
-<span class="fc" id="L711">                    listener.onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)</span>
+<span class="pc bpc" id="L711" title="1 of 2 branches missed.">                    listener.onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)</span>
                 }
 <span class="fc" id="L713">            }</span>
         })
