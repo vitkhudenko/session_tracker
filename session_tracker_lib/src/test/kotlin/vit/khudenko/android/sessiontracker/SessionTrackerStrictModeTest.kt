@@ -10,7 +10,6 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -95,8 +94,7 @@ class SessionTrackerStrictModeTest {
         }
 
         verify(storage).readAllSessionRecords()
-        verifyNoMoreInteractions(storage)
-        verifyZeroInteractions(listener)
+        verifyNoMoreInteractions(storage, listener)
     }
 
     @Test
@@ -119,8 +117,7 @@ class SessionTrackerStrictModeTest {
         }
 
         verify(storage).readAllSessionRecords()
-        verifyNoMoreInteractions(storage)
-        verifyZeroInteractions(listener)
+        verifyNoMoreInteractions(storage, listener)
     }
 
     @Test
@@ -142,7 +139,7 @@ class SessionTrackerStrictModeTest {
         sessionTracker.initialize(listener)
 
         verify(logger).w(SessionTracker.TAG, "initialize: already initialized, skipping..")
-        verifyZeroInteractions(listener, storage)
+        verifyNoMoreInteractions(listener, storage)
 
         assertEquals(sessionRecords, sessionTracker.getSessionRecords())
     }
@@ -256,7 +253,7 @@ class SessionTrackerStrictModeTest {
             "trackSession: session with ID '${sessionRecord.sessionId}' already exists"
         )
 
-        verifyZeroInteractions(storage, listener)
+        verifyNoMoreInteractions(storage, listener)
 
         assertEquals(sessionRecords, sessionTracker.getSessionRecords())
     }
@@ -281,7 +278,7 @@ class SessionTrackerStrictModeTest {
             sessionTracker.trackSession("session_id", State.ACTIVE)
         }
 
-        verifyZeroInteractions(storage, listener)
+        verifyNoMoreInteractions(storage, listener)
         assertTrue(sessionTracker.getSessionRecords().isEmpty())
     }
 
@@ -366,8 +363,7 @@ class SessionTrackerStrictModeTest {
         sessionTracker.untrackSession(unknownSessionId)
 
         verify(logger).d(SessionTracker.TAG, "untrackSession: no session with ID '$unknownSessionId' found")
-        verifyNoMoreInteractions(logger)
-        verifyZeroInteractions(storage, listener)
+        verifyNoMoreInteractions(storage, listener, logger)
 
         assertEquals(sessionRecords, sessionTracker.getSessionRecords())
     }
@@ -451,7 +447,7 @@ class SessionTrackerStrictModeTest {
 
         sessionTracker.untrackAllSessions()
 
-        verifyZeroInteractions(storage, listener, logger)
+        verifyNoMoreInteractions(storage, listener, logger)
 
         assertTrue(sessionTracker.getSessionRecords().isEmpty())
     }
@@ -474,8 +470,7 @@ class SessionTrackerStrictModeTest {
 
         verify(logger).d(SessionTracker.TAG, "untrackAllSessions: no sessions found")
 
-        verifyZeroInteractions(storage, listener)
-        verifyNoMoreInteractions(logger)
+        verifyNoMoreInteractions(storage, listener, logger)
 
         assertTrue(sessionTracker.getSessionRecords().isEmpty())
     }
@@ -572,7 +567,7 @@ class SessionTrackerStrictModeTest {
         // LOGIN event will be ignored, since current state is ACTIVE
         assertFalse(sessionTracker.consumeEvent(sessionRecord.sessionId, Event.LOGIN))
 
-        verifyZeroInteractions(storage, listener)
+        verifyNoMoreInteractions(storage, listener)
 
         assertEquals(sessionRecords, sessionTracker.getSessionRecords())
     }
@@ -608,8 +603,7 @@ class SessionTrackerStrictModeTest {
             )
         }
 
-        verifyZeroInteractions(storage, listener)
-        verifyNoMoreInteractions(logger)
+        verifyNoMoreInteractions(storage, listener, logger)
 
         assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
     }
@@ -811,7 +805,7 @@ class SessionTrackerStrictModeTest {
 
         assertFalse(sessionTracker.consumeEvent(unknownSessionId, Event.LOGIN))
 
-        verifyZeroInteractions(storage, listener)
+        verifyNoMoreInteractions(storage, listener)
         verify(logger).w(SessionTracker.TAG, "consumeEvent: no session with ID '$unknownSessionId' found")
         verifyNoMoreInteractions(logger)
 
@@ -911,8 +905,7 @@ class SessionTrackerStrictModeTest {
             verify(listener).onSessionTrackingStopped(sessionTracker, sessionRecord)
         }
 
-        verifyNoMoreInteractions(listener, storage)
-        verifyZeroInteractions(logger)
+        verifyNoMoreInteractions(listener, storage, logger)
 
         assertTrue(sessionTracker.getSessionRecords().isEmpty())
     }

@@ -2,7 +2,7 @@ package vit.khudenko.android.sessiontracker
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -78,6 +78,6 @@ class UninitializedSessionTrackerRelaxedModeTest {
             "SessionTracker must be initialized before calling its #$methodName method"
         )
 
-        verifyZeroInteractions(storage, listener, sessionStateTransitionsSupplier)
+        verifyNoMoreInteractions(storage, listener, sessionStateTransitionsSupplier)
     }
 }

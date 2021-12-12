@@ -9,7 +9,6 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -63,12 +62,7 @@ fun verifyInitialization(
         }
     }
 
-    if (mode.verbose) {
-        verifyNoMoreInteractions(listener, storage, logger)
-    } else {
-        verifyNoMoreInteractions(listener, storage)
-        verifyZeroInteractions(logger)
-    }
+    verifyNoMoreInteractions(listener, storage, logger)
 
     reset(listener, storage, logger)
 
@@ -82,7 +76,7 @@ fun verifyInitialization(
         verify(logger).d(SessionTracker.TAG, "getSessionRecords: $dump")
         verifyNoMoreInteractions(logger)
     } else {
-        verifyZeroInteractions(listener, storage, logger)
+        verifyNoMoreInteractions(listener, storage, logger)
     }
 
     reset(listener, storage, logger)

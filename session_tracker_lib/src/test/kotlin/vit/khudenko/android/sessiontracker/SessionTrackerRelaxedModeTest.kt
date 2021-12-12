@@ -7,10 +7,10 @@ import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.inOrder
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -99,7 +99,7 @@ class SessionTrackerRelaxedModeTest {
         )
         verify(listener).onSessionTrackerInitialized(sessionTracker, emptyList())
         verifyNoMoreInteractions(storage, listener)
-        verifyZeroInteractions(sessionStateTransitionsSupplier)
+        verify(sessionStateTransitionsSupplier, never()).getStateTransitions(any())
     }
 
     @Test
@@ -122,7 +122,7 @@ class SessionTrackerRelaxedModeTest {
 
         verify(storage).readAllSessionRecords()
         verifyNoMoreInteractions(storage)
-        verifyZeroInteractions(listener)
+        verifyNoMoreInteractions(listener)
     }
 
     @Test
@@ -143,7 +143,7 @@ class SessionTrackerRelaxedModeTest {
         sessionTracker.initialize(listener)
 
         verify(logger).w(SessionTracker.TAG, "initialize: already initialized, skipping..")
-        verifyZeroInteractions(listener, storage)
+        verifyNoMoreInteractions(listener, storage)
 
         assertEquals(sessionRecords, sessionTracker.getSessionRecords())
     }
@@ -226,7 +226,7 @@ class SessionTrackerRelaxedModeTest {
             "trackSession: session with ID '${sessionId}' is in auto-untrack state (${State.FORGOTTEN}), " +
                     "rejecting this session"
         )
-        verifyZeroInteractions(storage, sessionStateTransitionsSupplier, listener)
+        verifyNoMoreInteractions(storage, sessionStateTransitionsSupplier, listener)
 
         assertTrue(sessionTracker.getSessionRecords().isEmpty())
     }
@@ -254,7 +254,7 @@ class SessionTrackerRelaxedModeTest {
             "trackSession: session with ID '${sessionRecord.sessionId}' already exists"
         )
 
-        verifyZeroInteractions(storage, listener)
+        verifyNoMoreInteractions(storage, listener)
 
         assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
     }
@@ -279,7 +279,7 @@ class SessionTrackerRelaxedModeTest {
             sessionTracker.trackSession("session_id", State.ACTIVE)
         }
 
-        verifyZeroInteractions(storage, listener)
+        verifyNoMoreInteractions(storage, listener)
         assertTrue(sessionTracker.getSessionRecords().isEmpty())
     }
 
@@ -360,7 +360,7 @@ class SessionTrackerRelaxedModeTest {
 
         sessionTracker.untrackSession(unknownSessionId)
 
-        verifyZeroInteractions(storage, listener)
+        verifyNoMoreInteractions(storage, listener)
         verify(logger).d(SessionTracker.TAG, "untrackSession: no session with ID '$unknownSessionId' found")
         verifyNoMoreInteractions(logger)
 
@@ -445,7 +445,7 @@ class SessionTrackerRelaxedModeTest {
 
         sessionTracker.untrackAllSessions()
 
-        verifyZeroInteractions(storage, listener, logger)
+        verifyNoMoreInteractions(storage, listener, logger)
 
         assertTrue(sessionTracker.getSessionRecords().isEmpty())
     }
@@ -468,8 +468,7 @@ class SessionTrackerRelaxedModeTest {
 
         verify(logger).d(SessionTracker.TAG, "untrackAllSessions: no sessions found")
 
-        verifyZeroInteractions(storage, listener)
-        verifyNoMoreInteractions(logger)
+        verifyNoMoreInteractions(storage, listener, logger)
 
         assertTrue(sessionTracker.getSessionRecords().isEmpty())
     }
@@ -565,7 +564,7 @@ class SessionTrackerRelaxedModeTest {
         // LOGIN event will be ignored, since current state is ACTIVE
         assertFalse(sessionTracker.consumeEvent(sessionRecord.sessionId, Event.LOGIN))
 
-        verifyZeroInteractions(storage, listener)
+        verifyNoMoreInteractions(storage, listener)
 
         assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
     }
@@ -601,8 +600,7 @@ class SessionTrackerRelaxedModeTest {
             )
         }
 
-        verifyZeroInteractions(storage, listener)
-        verifyNoMoreInteractions(logger)
+        verifyNoMoreInteractions(storage, listener, logger)
 
         assertEquals(listOf(sessionRecord), sessionTracker.getSessionRecords())
     }
@@ -806,7 +804,7 @@ class SessionTrackerRelaxedModeTest {
 
         assertFalse(sessionTracker.consumeEvent(unknownSessionId, Event.LOGIN))
 
-        verifyZeroInteractions(storage, listener)
+        verifyNoMoreInteractions(storage, listener)
         verify(logger).w(SessionTracker.TAG, "consumeEvent: no session with ID '$unknownSessionId' found")
         verifyNoMoreInteractions(logger)
 
@@ -907,8 +905,7 @@ class SessionTrackerRelaxedModeTest {
             verify(listener).onSessionTrackingStopped(sessionTracker, sessionRecord)
         }
 
-        verifyNoMoreInteractions(listener, storage)
-        verifyZeroInteractions(logger)
+        verifyNoMoreInteractions(listener, storage, logger)
 
         assertTrue(sessionTracker.getSessionRecords().isEmpty())
     }
