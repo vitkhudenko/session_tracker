@@ -11,7 +11,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import vit.khudenko.android.sessiontracker.sample.koin.EXTRA_CURRENT_SESSION_ID
@@ -45,8 +44,8 @@ class LoginActivity : AppCompatActivity() {
         lifecycleScope.launch {
             viewModel.stateFlow()
                 .flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)
-                .collect {
-                    when (it) {
+                .collect { state ->
+                    when (state) {
                         LoginViewModel.State.Idle -> {
                             loginButton.isEnabled = true
                             progressView.visibility= View.GONE
@@ -57,7 +56,7 @@ class LoginActivity : AppCompatActivity() {
                         }
                         is LoginViewModel.State.Success -> {
                             val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                            intent.putExtra(EXTRA_CURRENT_SESSION_ID, it.userId)
+                            intent.putExtra(EXTRA_CURRENT_SESSION_ID, state.userId)
                             startActivity(intent)
                             finish()
                         }

@@ -9,11 +9,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.getKoin
 import org.koin.androidx.viewmodel.ViewModelOwner
-import org.koin.androidx.viewmodel.scope.emptyState
 import org.koin.androidx.viewmodel.scope.getViewModel
 import vit.khudenko.android.sessiontracker.SessionId
 
@@ -48,8 +46,8 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             viewModel.stateFlow()
                 .flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)
-                .collect {
-                    when (it) {
+                .collect { state ->
+                    when (state) {
                         MainViewModel.State.Idle -> {
                             logoutButton.isEnabled = true
                             progressView.visibility = View.GONE
