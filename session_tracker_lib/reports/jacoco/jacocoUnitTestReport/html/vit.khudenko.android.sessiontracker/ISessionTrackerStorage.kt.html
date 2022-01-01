@@ -105,7 +105,7 @@ interface ISessionTrackerStorage&lt;State : Enum&lt;State&gt;&gt; {
             )
 <span class="fc" id="L106">        }</span>
 
-        override fun deleteSessionRecord(sessionId: String) {
+        override fun deleteSessionRecord(sessionId: SessionId) {
 <span class="fc" id="L109">            saveSessionRecords(</span>
 <span class="fc bfc" id="L110" title="All 4 branches covered.">                readAllSessionRecords().filter { it.sessionId != sessionId }</span>
             )
@@ -130,7 +130,7 @@ interface ISessionTrackerStorage&lt;State : Enum&lt;State&gt;&gt; {
         private fun sessionRecordToJson(sessionRecord: SessionRecord&lt;State&gt;): JSONObject {
 <span class="fc" id="L131">            return JSONObject(</span>
 <span class="fc" id="L132">                mapOf(</span>
-<span class="fc" id="L133">                    KEY_SESSION_ID to sessionRecord.sessionId,</span>
+<span class="fc" id="L133">                    KEY_SESSION_ID to sessionRecord.sessionId.value,</span>
 <span class="fc" id="L134">                    KEY_SESSION_STATE to sessionRecord.state.ordinal</span>
                 )
             )
@@ -138,7 +138,7 @@ interface ISessionTrackerStorage&lt;State : Enum&lt;State&gt;&gt; {
 
         private fun jsonToSessionRecord(json: JSONObject): SessionRecord&lt;State&gt; {
 <span class="fc" id="L140">            return SessionRecord(</span>
-<span class="fc" id="L141">                json.getString(KEY_SESSION_ID),</span>
+<span class="fc" id="L141">                SessionId(json.getString(KEY_SESSION_ID)),</span>
 <span class="fc" id="L142">                stateEnumValuesList[json.getInt(KEY_SESSION_STATE)]</span>
             )
         }

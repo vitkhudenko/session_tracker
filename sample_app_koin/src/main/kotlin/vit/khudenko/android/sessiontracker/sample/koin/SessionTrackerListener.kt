@@ -39,7 +39,7 @@ class SessionTrackerListener(private val koinProvider: () -> Koin) : SessionTrac
         sessionRecord: SessionRecord<State>
     ) {
         val (sessionId, initState) = sessionRecord
-        Log.d(TAG, "onSessionTrackingStarted: session ID = ${sessionId}, initState = $initState")
+        Log.d(TAG, "onSessionTrackingStarted: session ID = ${sessionId.value}, initState = $initState")
         if (initState == State.ACTIVE) {
             createKoinScope(sessionId)
         }
@@ -50,7 +50,7 @@ class SessionTrackerListener(private val koinProvider: () -> Koin) : SessionTrac
         sessionRecord: SessionRecord<State>
     ) {
         val (sessionId, state) = sessionRecord
-        Log.d(TAG, "onSessionTrackingStopped: session ID = ${sessionId}, state = $state")
+        Log.d(TAG, "onSessionTrackingStopped: session ID = ${sessionId.value}, state = $state")
         closeKoinScope(sessionId)
     }
 
@@ -60,7 +60,7 @@ class SessionTrackerListener(private val koinProvider: () -> Koin) : SessionTrac
         oldState: State
     ) {
         val (sessionId, newState) = sessionRecord
-        Log.d(TAG, "onSessionStateChanged: session ID = ${sessionId}, states = ($oldState -> $newState)")
+        Log.d(TAG, "onSessionStateChanged: session ID = ${sessionId.value}, states = ($oldState -> $newState)")
         when (newState) {
             State.ACTIVE -> createKoinScope(sessionId)
             State.INACTIVE,
@@ -78,22 +78,22 @@ class SessionTrackerListener(private val koinProvider: () -> Koin) : SessionTrac
 
     private fun closeKoinScope(sessionId: SessionId) {
         if (scope != null) {
-            Log.d(TAG, "closeKoinScope: session ID = '$sessionId'")
+            Log.d(TAG, "closeKoinScope: session ID = '${sessionId.value}'")
             scope!!.close()
             scope = null
         } else {
-            Log.d(TAG, "closeKoinScope: no scope to close for session with ID '$sessionId'")
+            Log.d(TAG, "closeKoinScope: no scope to close for session with ID '${sessionId.value}'")
         }
     }
 
     private fun createKoinScope(sessionId: SessionId) {
         if (scope != null) {
-            Log.w(TAG, "createKoinScope: scope already exists for session with ID '$sessionId'")
+            Log.w(TAG, "createKoinScope: scope already exists for session with ID '${sessionId.value}'")
         } else {
-            Log.d(TAG, "createKoinScope: session ID = '$sessionId'")
+            Log.d(TAG, "createKoinScope: session ID = '${sessionId.value}'")
             scope = koinProvider().createScope(
                 qualifier = named(SCOPE_ID_USER_SESSION),
-                scopeId = sessionId
+                scopeId = sessionId.value
             )
         }
     }

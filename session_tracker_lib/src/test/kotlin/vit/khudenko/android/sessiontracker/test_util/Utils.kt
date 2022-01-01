@@ -1,6 +1,5 @@
 package vit.khudenko.android.sessiontracker.test_util
 
-import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argThat
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.eq
@@ -21,7 +20,7 @@ import vit.khudenko.android.sessiontracker.Transition
 import java.util.Collections
 
 fun createSessionStateTransitionsSupplierMock() = mock<ISessionStateTransitionsSupplier<Event, State>> {
-    on { getStateTransitions(any()) } doReturn listOf(
+    on { getStateTransitions(anySessionId()) } doReturn listOf(
         Transition(
             Event.LOGIN,
             listOf(State.INACTIVE, State.ACTIVE)
@@ -72,7 +71,7 @@ fun verifyInitialization(
         val dump = sessionRecords.joinToString(
             prefix = "[",
             postfix = "]"
-        ) { (sessionId, state) -> "{ '${sessionId}': $state }" }
+        ) { (sessionId, state) -> "{ '${sessionId.value}': $state }" }
         verify(logger).d(SessionTracker.TAG, "getSessionRecords: $dump")
         verifyNoMoreInteractions(logger)
     } else {

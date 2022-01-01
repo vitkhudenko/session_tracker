@@ -21,7 +21,7 @@ public class LoginViewModel extends BaseViewModel {
     @NonNull
     private final SessionTracker<Session.Event, Session.State> sessionTracker;
     @NonNull
-    private BehaviorSubject<State> state = BehaviorSubject.createDefault(State.Idle.INSTANCE);
+    private final BehaviorSubject<State> state = BehaviorSubject.createDefault(State.Idle.INSTANCE);
 
     @Nullable
     private Disposable disposable;
@@ -38,7 +38,7 @@ public class LoginViewModel extends BaseViewModel {
             synchronized (sessionTracker) {
                 Optional<SessionRecord<Session.State>> optionalSessionRecord = sessionTracker.getSessionRecords()
                         .stream()
-                        .filter(record -> record.getSessionId().equals(userId))
+                        .filter(record -> record.sessionId().equals(userId))
                         .findFirst();
                 if (optionalSessionRecord.isPresent()) {
                     sessionTracker.consumeEvent(userId, Session.Event.LOGIN);

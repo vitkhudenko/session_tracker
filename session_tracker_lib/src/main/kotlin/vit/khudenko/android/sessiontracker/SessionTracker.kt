@@ -368,7 +368,7 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
             .filter { sessionRecord ->
                 sessionRecord.state in autoUntrackStates
             }.forEach { (sessionId, state) ->
-                val explanation = "session with ID '${sessionId}' is in auto-untrack state (${state})"
+                val explanation = "session with ID '${sessionId.value}' is in auto-untrack state (${state})"
                 if (mode.strict) {
                     throw RuntimeException("Unable to initialize $logTag: $explanation")
                 } else {
@@ -421,7 +421,7 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
             if (mode.verbose) {
                 val dump = sessionRecords.joinToString(
                     prefix = "[", postfix = "]"
-                ) { (sessionId, state) -> "{ '${sessionId}': $state }" }
+                ) { (sessionId, state) -> "{ '${sessionId.value}': $state }" }
                 logger.d(logTag, "getSessionRecords: $dump")
             }
             sessionRecords
@@ -454,21 +454,22 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
      * and does nothing.
      */
     @Synchronized
+    @JvmName("trackSession")
     fun trackSession(sessionId: SessionId, state: State) {
         if (!ensureInitialized("trackSession")) {
             return
         }
         if (mode.verbose) {
-            logger.d(logTag, "trackSession: sessionId = '${sessionId}', state = $state")
+            logger.d(logTag, "trackSession: sessionId = '${sessionId.value}', state = $state")
         }
         if (!ensureNotPersisting("trackSession")) {
             return
         }
         if (sessionsMap.contains(sessionId)) {
-            logger.w(logTag, "trackSession: session with ID '${sessionId}' already exists")
+            logger.w(logTag, "trackSession: session with ID '${sessionId.value}' already exists")
         } else {
             if (state in autoUntrackStates) {
-                val explanation = "session with ID '${sessionId}' is in auto-untrack state ($state)"
+                val explanation = "session with ID '${sessionId.value}' is in auto-untrack state ($state)"
                 require(mode.strict.not()) { "Unable to track session: $explanation" }
                 logger.e(logTag, "trackSession: $explanation, rejecting this session")
             } else {
@@ -508,22 +509,23 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
      * and does nothing.
      */
     @Synchronized
+    @JvmName("untrackSession")
     fun untrackSession(sessionId: SessionId) {
         if (!ensureInitialized("untrackSession")) {
             return
         }
         if (mode.verbose) {
-            logger.d(logTag, "untrackSession: sessionId = '${sessionId}'")
+            logger.d(logTag, "untrackSession: sessionId = '${sessionId.value}'")
         }
         if (!ensureNotPersisting("untrackSession")) {
             return
         }
         val sessionInfo = sessionsMap[sessionId]
         if (sessionInfo == null) {
-            logger.d(logTag, "untrackSession: no session with ID '$sessionId' found")
+            logger.d(logTag, "untrackSession: no session with ID '${sessionId.value}' found")
         } else {
             if (sessionInfo.isUntracking) {
-                logger.w(logTag, "untrackSession: session with ID '$sessionId' is already untracking")
+                logger.w(logTag, "untrackSession: session with ID '${sessionId.value}' is already untracking")
             } else {
                 sessionsMap[sessionId] = sessionInfo.copy(isUntracking = true)
                 doUntrackSession(sessionId, sessionInfo.stateMachine)
@@ -606,28 +608,29 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
      * and returns false.
      */
     @Synchronized
+    @JvmName("consumeEvent")
     fun consumeEvent(sessionId: SessionId, event: Event): Boolean {
         if (!ensureInitialized("consumeEvent")) {
             return false
         }
         if (mode.verbose) {
-            logger.d(logTag, "consumeEvent: sessionId = '$sessionId', event = '$event'")
+            logger.d(logTag, "consumeEvent: sessionId = '${sessionId.value}', event = '$event'")
         }
         if (!ensureNotPersisting("consumeEvent")) {
             return false
         }
         val sessionInfo = sessionsMap[sessionId]
         if (sessionInfo == null) {
-            logger.w(logTag, "consumeEvent: no session with ID '$sessionId' found")
+            logger.w(logTag, "consumeEvent: no session with ID '${sessionId.value}' found")
         } else {
             if (sessionInfo.isUntracking) {
-                logger.w(logTag, "consumeEvent: event = '$event', session with ID '$sessionId' is already untracking")
+                logger.w(logTag, "consumeEvent: event = '$event', session with ID '${sessionId.value}' is already untracking")
             } else if (sessionInfo.stateMachine.consumeEvent(event)) {
                 return true
             }
             if (mode.verbose) {
                 logger.d(
-                    logTag, "consumeEvent: event '$event' was ignored for session with ID '$sessionId' " +
+                    logTag, "consumeEvent: event '$event' was ignored for session with ID '${sessionId.value}' " +
                             "in state ${sessionInfo.stateMachine.getCurrentState()}, " +
                             "isUntracking = ${sessionInfo.isUntracking}"
                 )
@@ -684,7 +687,7 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
 
         stateMachine.addListener(object : StateMachine.Listener<State> {
             override fun onStateChanged(oldState: State, newState: State) {
-                val baseLogMessage = "onStateChanged: '$oldState' -> '$newState', sessionId = '${sessionId}'"
+                val baseLogMessage = "onStateChanged: '$oldState' -> '$newState', sessionId = '${sessionId.value}'"
 
                 val sessionInfo = sessionsMap[sessionId]
 
@@ -730,5 +733,3 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
         val isUntracking: Boolean = false
     )
 }
-
-typealias SessionId = String

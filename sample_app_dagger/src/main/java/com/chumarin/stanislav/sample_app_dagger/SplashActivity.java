@@ -21,12 +21,12 @@ public class SplashActivity extends AppCompatActivity {
 
     private Handler handler;
 
-    private Runnable action = () -> {
-        List<SessionRecord> activeSessionRecords = sessionTracker.getSessionRecords().stream()
+    private final Runnable action = () -> {
+        List<SessionRecord<Session.State>> activeSessionRecords = sessionTracker.getSessionRecords().stream()
                 .filter(stateSessionRecord -> stateSessionRecord.getState() == Session.State.ACTIVE)
                 .collect(Collectors.toList());
 
-        String currentSessionId = activeSessionRecords.isEmpty() ? null : activeSessionRecords.get(0).getSessionId();
+        String currentSessionId = activeSessionRecords.isEmpty() ? null : activeSessionRecords.get(0).sessionId();
 
         if (currentSessionId == null) {
             startActivity(new Intent(this, LoginActivity.class));

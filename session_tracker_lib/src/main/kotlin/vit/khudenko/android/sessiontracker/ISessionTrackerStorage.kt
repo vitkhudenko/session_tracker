@@ -105,7 +105,7 @@ interface ISessionTrackerStorage<State : Enum<State>> {
             )
         }
 
-        override fun deleteSessionRecord(sessionId: String) {
+        override fun deleteSessionRecord(sessionId: SessionId) {
             saveSessionRecords(
                 readAllSessionRecords().filter { it.sessionId != sessionId }
             )
@@ -130,7 +130,7 @@ interface ISessionTrackerStorage<State : Enum<State>> {
         private fun sessionRecordToJson(sessionRecord: SessionRecord<State>): JSONObject {
             return JSONObject(
                 mapOf(
-                    KEY_SESSION_ID to sessionRecord.sessionId,
+                    KEY_SESSION_ID to sessionRecord.sessionId.value,
                     KEY_SESSION_STATE to sessionRecord.state.ordinal
                 )
             )
@@ -138,7 +138,7 @@ interface ISessionTrackerStorage<State : Enum<State>> {
 
         private fun jsonToSessionRecord(json: JSONObject): SessionRecord<State> {
             return SessionRecord(
-                json.getString(KEY_SESSION_ID),
+                SessionId(json.getString(KEY_SESSION_ID)),
                 stateEnumValuesList[json.getInt(KEY_SESSION_STATE)]
             )
         }

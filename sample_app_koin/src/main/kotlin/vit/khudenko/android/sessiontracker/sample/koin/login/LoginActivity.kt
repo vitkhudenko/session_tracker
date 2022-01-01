@@ -13,6 +13,7 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import vit.khudenko.android.sessiontracker.SessionId
 import vit.khudenko.android.sessiontracker.sample.koin.EXTRA_CURRENT_SESSION_ID
 import vit.khudenko.android.sessiontracker.sample.koin.MainActivity
 import vit.khudenko.android.sessiontracker.sample.koin.R
@@ -36,7 +37,7 @@ class LoginActivity : AppCompatActivity() {
         loginButton.setOnClickListener {
             val userId = userIdView.text.toString().trim()
             if (userId.isNotBlank()) {
-                viewModel.onLoginButtonClicked(userId)
+                viewModel.onLoginButtonClicked(SessionId(userId))
                 hideKeyboard(userIdView)
             }
         }
@@ -56,7 +57,7 @@ class LoginActivity : AppCompatActivity() {
                         }
                         is LoginViewModel.State.Success -> {
                             val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                            intent.putExtra(EXTRA_CURRENT_SESSION_ID, state.userId)
+                            intent.putExtra(EXTRA_CURRENT_SESSION_ID, state.sessionId)
                             startActivity(intent)
                             finish()
                         }

@@ -36,17 +36,17 @@ class UninitializedSessionTrackerStrictModeTest {
 
     @Test
     fun `consumeEvent() called with uninitialized sessionTracker`() {
-        verify("consumeEvent") { sessionTracker.consumeEvent("session_id", Event.LOGIN) }
+        verify("consumeEvent") { sessionTracker.consumeEvent(SessionId("session_id"), Event.LOGIN) }
     }
 
     @Test
     fun `trackSession() called with uninitialized sessionTracker`() {
-        verify("trackSession") { sessionTracker.trackSession("session_id", State.ACTIVE) }
+        verify("trackSession") { sessionTracker.trackSession(SessionId("session_id"), State.ACTIVE) }
     }
 
     @Test
     fun `untrackSession() called with uninitialized sessionTracker`() {
-        verify("untrackSession") { sessionTracker.untrackSession("session_id") }
+        verify("untrackSession") { sessionTracker.untrackSession(SessionId("session_id")) }
     }
 
     @Test

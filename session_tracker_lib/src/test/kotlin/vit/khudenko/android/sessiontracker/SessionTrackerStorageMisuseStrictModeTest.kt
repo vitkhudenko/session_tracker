@@ -47,8 +47,8 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#consumeEvent() from consumeEvent()`() {
-        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
-        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
+        val sessionRecord1 = SessionRecord(SessionId("session_id_1"), State.ACTIVE)
+        val sessionRecord2 = SessionRecord(SessionId("session_id_2"), State.INACTIVE)
 
         val updatedSessionRecord1 = sessionRecord1.copy(state = State.INACTIVE)
 
@@ -82,13 +82,13 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#trackSession() from consumeEvent()`() {
-        val sessionRecord = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord = SessionRecord(SessionId("session_id_1"), State.ACTIVE)
         val updatedSessionRecord = sessionRecord.copy(state = State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn listOf(sessionRecord)
             on { updateSessionRecord(updatedSessionRecord) } doAnswer {
-                sessionTrackerRef.get().trackSession("session_id_2", State.INACTIVE)
+                sessionTrackerRef.get().trackSession(SessionId("session_id_2"), State.INACTIVE)
                 Unit
             }
         }
@@ -115,7 +115,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#untrackSession() from consumeEvent()`() {
-        val sessionRecord = SessionRecord("session_id", State.ACTIVE)
+        val sessionRecord = SessionRecord(SessionId("session_id"), State.ACTIVE)
         val updatedSessionRecord = sessionRecord.copy(state = State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
@@ -148,8 +148,8 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#untrackAllSessions() from consumeEvent()`() {
-        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
-        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
+        val sessionRecord1 = SessionRecord(SessionId("session_id_1"), State.ACTIVE)
+        val sessionRecord2 = SessionRecord(SessionId("session_id_2"), State.INACTIVE)
         val updatedSessionRecord1 = sessionRecord1.copy(state = State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
@@ -183,7 +183,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#consumeEvent() from trackSession()`() {
-        val sessionId = "session_id"
+        val sessionId = SessionId("session_id")
         val state = State.ACTIVE
 
         val storage = mock<ISessionTrackerStorage<State>> {
@@ -217,13 +217,13 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#trackSession() from trackSession()`() {
-        val sessionId = "session_id"
+        val sessionId = SessionId("session_id")
         val state = State.ACTIVE
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn emptyList()
             on { createSessionRecord(SessionRecord(sessionId, state)) } doAnswer {
-                sessionTrackerRef.get().trackSession("session_id_2", State.INACTIVE)
+                sessionTrackerRef.get().trackSession(SessionId("session_id_2"), State.INACTIVE)
                 Unit
             }
         }
@@ -251,7 +251,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#untrackSession() from trackSession()`() {
-        val sessionId = "session_id"
+        val sessionId = SessionId("session_id")
         val state = State.ACTIVE
 
         val storage = mock<ISessionTrackerStorage<State>> {
@@ -285,7 +285,7 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#untrackAllSessions() from trackSession()`() {
-        val sessionId = "session_id"
+        val sessionId = SessionId("session_id")
         val state = State.ACTIVE
 
         val storage = mock<ISessionTrackerStorage<State>> {
@@ -319,8 +319,8 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#consumeEvent() from untrackSession()`() {
-        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
-        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
+        val sessionRecord1 = SessionRecord(SessionId("session_id_1"), State.ACTIVE)
+        val sessionRecord2 = SessionRecord(SessionId("session_id_2"), State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn listOf(sessionRecord1, sessionRecord2)
@@ -352,12 +352,12 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#trackSession() from untrackSession()`() {
-        val sessionRecord = SessionRecord("session_id_1", State.ACTIVE)
+        val sessionRecord = SessionRecord(SessionId("session_id_1"), State.ACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn listOf(sessionRecord)
             on { deleteSessionRecord(sessionRecord.sessionId) } doAnswer {
-                sessionTrackerRef.get().trackSession("session_id_2", State.INACTIVE)
+                sessionTrackerRef.get().trackSession(SessionId("session_id_2"), State.INACTIVE)
                 Unit
             }
         }
@@ -384,8 +384,8 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#untrackSession() from untrackSession()`() {
-        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
-        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
+        val sessionRecord1 = SessionRecord(SessionId("session_id_1"), State.ACTIVE)
+        val sessionRecord2 = SessionRecord(SessionId("session_id_2"), State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn listOf(sessionRecord1, sessionRecord2)
@@ -417,8 +417,8 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#untrackAllSessions() from untrackSession()`() {
-        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
-        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
+        val sessionRecord1 = SessionRecord(SessionId("session_id_1"), State.ACTIVE)
+        val sessionRecord2 = SessionRecord(SessionId("session_id_2"), State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn listOf(sessionRecord1, sessionRecord2)
@@ -450,8 +450,8 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#consumeEvent() from untrackAllSessions()`() {
-        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
-        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
+        val sessionRecord1 = SessionRecord(SessionId("session_id_1"), State.ACTIVE)
+        val sessionRecord2 = SessionRecord(SessionId("session_id_2"), State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn listOf(sessionRecord1, sessionRecord2)
@@ -483,13 +483,13 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#trackSession() from untrackAllSessions()`() {
-        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
-        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
+        val sessionRecord1 = SessionRecord(SessionId("session_id_1"), State.ACTIVE)
+        val sessionRecord2 = SessionRecord(SessionId("session_id_2"), State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn listOf(sessionRecord1, sessionRecord2)
             on { deleteAllSessionRecords() } doAnswer {
-                sessionTrackerRef.get().trackSession("session_id_3", State.ACTIVE)
+                sessionTrackerRef.get().trackSession(SessionId("session_id_3"), State.ACTIVE)
                 Unit
             }
         }
@@ -516,8 +516,8 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#untrackSession() from untrackAllSessions()`() {
-        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
-        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
+        val sessionRecord1 = SessionRecord(SessionId("session_id_1"), State.ACTIVE)
+        val sessionRecord2 = SessionRecord(SessionId("session_id_2"), State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn listOf(sessionRecord1, sessionRecord2)
@@ -549,8 +549,8 @@ class SessionTrackerStorageMisuseStrictModeTest {
 
     @Test
     fun `storage implementation attempts to call SessionTracker#untrackAllSessions() from untrackAllSessions()`() {
-        val sessionRecord1 = SessionRecord("session_id_1", State.ACTIVE)
-        val sessionRecord2 = SessionRecord("session_id_2", State.INACTIVE)
+        val sessionRecord1 = SessionRecord(SessionId("session_id_1"), State.ACTIVE)
+        val sessionRecord2 = SessionRecord(SessionId("session_id_2"), State.INACTIVE)
 
         val storage = mock<ISessionTrackerStorage<State>> {
             on { readAllSessionRecords() } doReturn listOf(sessionRecord1, sessionRecord2)

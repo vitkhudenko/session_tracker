@@ -39,19 +39,19 @@ class UninitializedSessionTrackerRelaxedModeTest {
     @Test
     fun `consumeEvent() called with uninitialized sessionTracker`() {
         verify("consumeEvent") {
-            val isEventConsumed = sessionTracker.consumeEvent("session_id", Event.LOGIN)
+            val isEventConsumed = sessionTracker.consumeEvent(SessionId("session_id"), Event.LOGIN)
             assertFalse(isEventConsumed)
         }
     }
 
     @Test
     fun `trackSession() called with uninitialized sessionTracker`() {
-        verify("trackSession") { sessionTracker.trackSession("session_id", State.ACTIVE) }
+        verify("trackSession") { sessionTracker.trackSession(SessionId("session_id"), State.ACTIVE) }
     }
 
     @Test
     fun `untrackSession() called with uninitialized sessionTracker`() {
-        verify("untrackSession") { sessionTracker.untrackSession("session_id") }
+        verify("untrackSession") { sessionTracker.untrackSession(SessionId("session_id")) }
     }
 
     @Test

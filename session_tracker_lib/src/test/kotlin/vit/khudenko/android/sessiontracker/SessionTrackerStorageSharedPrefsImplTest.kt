@@ -17,7 +17,7 @@ class SessionTrackerStorageSharedPrefsImplTest {
             every { ordinal } returns 123
         }
         val sessionRecord = mockk<SessionRecord<State>> {
-            every { sessionId } returns "sessionId"
+            every { sessionId } returns SessionId("sessionId")
             every { state } returns sessionRecordState
         }
 
@@ -66,7 +66,7 @@ class SessionTrackerStorageSharedPrefsImplTest {
             every { ordinal } returns 123
         }
         val sessionRecord = mockk<SessionRecord<State>> {
-            every { sessionId } returns "sessionId"
+            every { sessionId } returns SessionId("sessionId")
             every { state } returns sessionRecordState
         }
 
@@ -115,7 +115,7 @@ class SessionTrackerStorageSharedPrefsImplTest {
 
         assertEquals(
             mutableListOf(
-                SessionRecord("sessionId-1", State.values()[1])
+                SessionRecord(SessionId("sessionId-1"), State.values()[1])
             ),
             storage.readAllSessionRecords()
         )
@@ -145,7 +145,7 @@ class SessionTrackerStorageSharedPrefsImplTest {
             every { ordinal } returns 1
         }
         val sessionRecord = mockk<SessionRecord<State>> {
-            every { sessionId } returns "sessionId"
+            every { sessionId } returns SessionId("sessionId")
             every { state } returns sessionRecordState
         }
 
@@ -180,7 +180,7 @@ class SessionTrackerStorageSharedPrefsImplTest {
         )
 
         val sessionRecord = mockk<SessionRecord<State>> {
-            every { sessionId } returns "sessionId-0"
+            every { sessionId } returns SessionId("sessionId-0")
         }
 
         storage.updateSessionRecord(sessionRecord)
@@ -212,7 +212,7 @@ class SessionTrackerStorageSharedPrefsImplTest {
             EnumSet.allOf(State::class.java)
         )
 
-        storage.deleteSessionRecord("sessionId-0")
+        storage.deleteSessionRecord(SessionId("sessionId-0"))
 
         verifySequence {
             prefs.getString("session_records", "[]")
@@ -238,7 +238,7 @@ class SessionTrackerStorageSharedPrefsImplTest {
             EnumSet.allOf(State::class.java)
         )
 
-        storage.deleteSessionRecord("sessionId-0")
+        storage.deleteSessionRecord(SessionId("sessionId-0"))
 
         verifySequence {
             prefs.getString("session_records", "[]")

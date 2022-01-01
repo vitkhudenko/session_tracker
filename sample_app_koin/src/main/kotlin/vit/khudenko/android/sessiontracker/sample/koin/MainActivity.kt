@@ -18,7 +18,7 @@ import vit.khudenko.android.sessiontracker.SessionId
 class MainActivity : AppCompatActivity() {
 
     private val viewModel: MainViewModel by lazy {
-        getKoin().getScope(scopeId = getSessionId()).getViewModel(
+        getKoin().getScope(scopeId = getSessionId().value).getViewModel(
             qualifier = null,
             owner = { ViewModelOwner.from(this, this) },
             parameters = null
@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
             viewModel.onLogOutAndForgetButtonClicked(getSessionId())
         }
 
-        sessionIdView.text = getSessionId()
+        sessionIdView.text = getSessionId().value
 
         lifecycleScope.launch {
             viewModel.stateFlow()
@@ -69,6 +69,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getSessionId(): SessionId {
-        return intent.getStringExtra(EXTRA_CURRENT_SESSION_ID)!!
+        return intent.getSerializableExtra(EXTRA_CURRENT_SESSION_ID) as SessionId
     }
 }

@@ -9,5 +9,11 @@
 <span class="fc" id="L9">data class SessionRecord&lt;State : Enum&lt;State&gt;&gt;(</span>
 <span class="fc" id="L10">    val sessionId: SessionId,</span>
 <span class="fc" id="L11">    val state: State</span>
-)
+) {
+    /**
+     * A workaround for accessing [sessionId] from a Java codebase (since SessionId is a Kotlin value class).
+     */
+    @JvmName(&quot;sessionId&quot;)
+<span class="nc" id="L17">    fun sessionId(): SessionId = sessionId</span>
+}
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

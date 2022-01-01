@@ -22,7 +22,7 @@ class ExtensionsTest {
             Transition(Event.LOGOUT_AND_FORGET, listOf(State.ACTIVE, State.FORGOTTEN))
         )
 
-        val actual = supplier.getStateTransitions("session ID")
+        val actual = supplier.getStateTransitions(SessionId("session ID"))
 
         assertEquals(expected.size, actual.size)
 
@@ -42,7 +42,7 @@ class ExtensionsTest {
 
         statePath.add(State.FORGOTTEN)
 
-        val actual = supplier.getStateTransitions("session ID")
+        val actual = supplier.getStateTransitions(SessionId("session ID"))
 
         assertEquals(listOf(State.INACTIVE, State.ACTIVE), actual.first().statePath)
     }
