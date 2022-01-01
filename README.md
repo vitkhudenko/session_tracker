@@ -74,7 +74,7 @@ then a sample transitions config (an implementation of `ISessionStateTransitions
 
 ```kotlin
 val sessionStateTransitionsSupplier = object : ISessionStateTransitionsSupplier<Event, State> {
-    override fun getStateTransitions(session: Session) = listOf(
+    override fun getStateTransitions(sessionId: SessionId) = listOf(
         Transition(
             event = Event.LOGIN,
             statePath = listOf(State.INACTIVE, State.ACTIVE)
@@ -185,10 +185,7 @@ Typical simple SessionTracker usage implies being a singleton in your app.
 
 ## Test coverage
 
-[Test Summary][test_summary]
-
 [Test Coverage report][test_coverage]
-
 
 ## License
 
@@ -219,5 +216,4 @@ Typical simple SessionTracker usage implies being a singleton in your app.
 [dagger]: https://github.com/google/dagger
 [sample_app_dagger]: https://github.com/vitkhudenko/session_tracker/tree/master/sample_app_dagger
 
-[test_summary]: https://htmlpreview.github.io/?https://github.com/vitkhudenko/session_tracker/blob/master/session_tracker_lib/reports/tests/testReleaseUnitTest/index.html
-[test_coverage]: https://rawcdn.githack.com/vitkhudenko/session_tracker/c60a13f3d73026c993a32ee8697ba28e6df88f99/session_tracker_lib/reports/jacoco/jacocoUnitTestReport/html/index.html
+[test_coverage]: https://rawcdn.githack.com/vitkhudenko/session_tracker/6ad98e536034348fd7a66c7bd7f8a0fb082fd2b4/session_tracker_lib/reports/kover/index.html

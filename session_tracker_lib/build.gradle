@@ -1,7 +1,9 @@
-apply plugin: 'com.android.library'
-apply plugin: 'maven-publish'
-apply plugin: 'kotlin-android'
-apply plugin: 'jacoco'
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+    id 'kotlin-android'
+    id 'org.jetbrains.kotlinx.kover' version "$kover_version"
+}
 
 def libraryVersionName = '1.1.3'
 def artifactName = 'SessionTracker'
@@ -32,41 +34,24 @@ android {
         }
     }
 
-    libraryVariants.all { variant ->
-        if (variant.name == 'release') {
-            tasks.create(
-                    name: "jacocoUnitTestReport",
-                    type: JacocoReport,
-                    dependsOn: ["test${variant.name.capitalize()}UnitTest"]
-            ) {
-                def fileFilter = [
-                        '**/R.class',
-                        '**/R$*.class',
-                        '**/BuildConfig.*',
-                        '**/Manifest*.*',
-                        '**/*Test*.*',
-                        'android/**/*.class'
-                ]
-
-                def javaClasses = fileTree(dir: variant.javaCompileProvider.get().destinationDir, excludes: fileFilter)
-                def kotlinClasses = fileTree(dir: "${buildDir}/tmp/kotlin-classes/${variant.name}", excludes: fileFilter)
-                def sourceDirs = variant.sourceSets.java.srcDirs.collect { it.path }.flatten()
-                def jacocoReport = project.tasks["test${variant.name.capitalize()}UnitTest"].jacoco.destinationFile.path
-
-                executionData.from = project.fileTree(dir: jacocoReport)
-                sourceDirectories.from = project.files(sourceDirs)
-                classDirectories.from = project.files([javaClasses, kotlinClasses])
-                reports {
-                    xml.enabled = false
-                    html.enabled = true
+    testOptions {
+        unitTests.all {
+            if (name == "testReleaseUnitTest") {
+                kover {
+                    enabled = true
                 }
             }
         }
     }
 }
 
-jacoco {
-    toolVersion = jacocoVersion // workaround for https://github.com/jacoco/jacoco/issues/1155
+tasks.koverHtmlReport {
+    enabled = true
+    htmlReportDir.set(file("/reports/kover"))
+}
+
+tasks.koverXmlReport {
+    enabled = false
 }
 
 task sourcesJar(type: Jar) {

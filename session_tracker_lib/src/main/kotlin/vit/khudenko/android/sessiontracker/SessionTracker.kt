@@ -326,7 +326,7 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
     private var initialized: Boolean = false
     private val sessionsMap = LinkedHashMap<SessionId, SessionInfo<Event, State>>()
     private var persisting = false
-    private lateinit var listener: Listener<Event, State>
+    private var listener: Listener<Event, State>? = null
 
     /**
      * Must be called before calling any other methods.
@@ -483,7 +483,7 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
                 }
                 doPersistAction { sessionTrackerStorage.createSessionRecord(sessionRecord) }
                 sessionsMap[sessionId] = SessionInfo(stateMachine)
-                listener.onSessionTrackingStarted(this@SessionTracker, sessionRecord)
+                checkNotNull(listener).onSessionTrackingStarted(this@SessionTracker, sessionRecord)
             }
         }
     }
@@ -578,7 +578,7 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
 
             sessionsMap.clear()
 
-            listener.onAllSessionsTrackingStopped(this@SessionTracker, sessionRecords)
+            checkNotNull(listener).onAllSessionsTrackingStopped(this@SessionTracker, sessionRecords)
         }
     }
 
@@ -643,7 +643,7 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
         stateMachine.removeAllListeners()
         doPersistAction { sessionTrackerStorage.deleteSessionRecord(sessionId) }
         sessionsMap.remove(sessionId)
-        listener.onSessionTrackingStopped(this@SessionTracker, SessionRecord(sessionId, stateMachine.getCurrentState()))
+        checkNotNull(listener).onSessionTrackingStopped(this@SessionTracker, SessionRecord(sessionId, stateMachine.getCurrentState()))
     }
 
     private fun ensureInitialized(method: String): Boolean {
@@ -705,13 +705,13 @@ class SessionTracker<Event : Enum<Event>, State : Enum<State>>(
                     val updatedSessionInfo = sessionInfo.copy(isUntracking = true)
                     sessionsMap[sessionId] = updatedSessionInfo
                     stateMachine.removeAllListeners()
-                    listener.onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)
+                    checkNotNull(listener).onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)
                     if (sessionsMap.containsKey(sessionId)) {
                         doUntrackSession(sessionId, updatedSessionInfo.stateMachine)
                     }
                 } else {
                     doPersistAction { sessionTrackerStorage.updateSessionRecord(updatedSessionRecord) }
-                    listener.onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)
+                    checkNotNull(listener).onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)
                 }
             }
         })
