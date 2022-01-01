@@ -21,7 +21,7 @@ allprojects {
 At a module level `build.gradle`, add the following dependency:
 
 ```groovy
-implementation 'com.github.vitkhudenko:session_tracker:1.1.3'
+implementation 'com.github.vitkhudenko:session_tracker:2.0.0'
 ```
 
 ## Contract description
@@ -216,4 +216,4 @@ Typical simple SessionTracker usage implies being a singleton in your app.
 [dagger]: https://github.com/google/dagger
 [sample_app_dagger]: https://github.com/vitkhudenko/session_tracker/tree/master/sample_app_dagger
 
-[test_coverage]: https://rawcdn.githack.com/vitkhudenko/session_tracker/6ad98e536034348fd7a66c7bd7f8a0fb082fd2b4/session_tracker_lib/reports/kover/index.html
+[test_coverage]: https://rawcdn.githack.com/vitkhudenko/session_tracker/9c5881d3b68afb82001a9cab720f6439f2033c5a/session_tracker_lib/reports/kover/index.html
