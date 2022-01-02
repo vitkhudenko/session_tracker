@@ -51,10 +51,10 @@ Current scope:     <a href="../../index.html">all classes</a>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    92.5%
+    100%
   </span>
   <span class="absValue">
-    (37/40)
+    (37/37)
   </span>
 </td>
 <td class="coverageStat">
@@ -198,10 +198,10 @@ Current scope:     <a href="../../index.html">all classes</a>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    37.5%
+    50%
   </span>
   <span class="absValue">
-    (3/8)
+    (3/6)
   </span>
 </td>
 <td class="coverageStat">
@@ -282,10 +282,10 @@ Current scope:     <a href="../../index.html">all classes</a>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.3%
+    93%
   </span>
   <span class="absValue">
-    (40/48)
+    (40/43)
   </span>
 </td>
 <td class="coverageStat">
@@ -789,7 +789,7 @@ Current scope:     <a href="../../index.html">all classes</a>
 <i class="no-highlight">483</i>&nbsp;                }
 <b class="fc"><i class="no-highlight">484</i>&nbsp;                doPersistAction { sessionTrackerStorage.createSessionRecord(sessionRecord) }</b>
 <b class="fc"><i class="no-highlight">485</i>&nbsp;                sessionsMap[sessionId] = SessionInfo(stateMachine)</b>
-<b class="pc"><i class="no-highlight">486</i>&nbsp;                checkNotNull(listener).onSessionTrackingStarted(this@SessionTracker, sessionRecord)</b>
+<b class="fc"><i class="no-highlight">486</i>&nbsp;                listener!!.onSessionTrackingStarted(this@SessionTracker, sessionRecord)</b>
 <i class="no-highlight">487</i>&nbsp;            }
 <i class="no-highlight">488</i>&nbsp;        }
 <i class="no-highlight">489</i>&nbsp;    }
@@ -884,7 +884,7 @@ Current scope:     <a href="../../index.html">all classes</a>
 <i class="no-highlight">578</i>&nbsp;
 <b class="fc"><i class="no-highlight">579</i>&nbsp;            sessionsMap.clear()</b>
 <i class="no-highlight">580</i>&nbsp;
-<b class="pc"><i class="no-highlight">581</i>&nbsp;            checkNotNull(listener).onAllSessionsTrackingStopped(this@SessionTracker, sessionRecords)</b>
+<b class="fc"><i class="no-highlight">581</i>&nbsp;            listener!!.onAllSessionsTrackingStopped(this@SessionTracker, sessionRecords)</b>
 <i class="no-highlight">582</i>&nbsp;        }
 <i class="no-highlight">583</i>&nbsp;    }
 <i class="no-highlight">584</i>&nbsp;
@@ -949,7 +949,7 @@ Current scope:     <a href="../../index.html">all classes</a>
 <b class="fc"><i class="no-highlight">643</i>&nbsp;        stateMachine.removeAllListeners()</b>
 <b class="fc"><i class="no-highlight">644</i>&nbsp;        doPersistAction { sessionTrackerStorage.deleteSessionRecord(sessionId) }</b>
 <b class="fc"><i class="no-highlight">645</i>&nbsp;        sessionsMap.remove(sessionId)</b>
-<b class="pc"><i class="no-highlight">646</i>&nbsp;        checkNotNull(listener).onSessionTrackingStopped(this@SessionTracker, SessionRecord(sessionId, stateMachine.getCurrentState()))</b>
+<b class="fc"><i class="no-highlight">646</i>&nbsp;        listener!!.onSessionTrackingStopped(this@SessionTracker, SessionRecord(sessionId, stateMachine.getCurrentState()))</b>
 <i class="no-highlight">647</i>&nbsp;    }
 <i class="no-highlight">648</i>&nbsp;
 <i class="no-highlight">649</i>&nbsp;    private fun ensureInitialized(method: String): Boolean {
@@ -1011,13 +1011,13 @@ Current scope:     <a href="../../index.html">all classes</a>
 <b class="fc"><i class="no-highlight">705</i>&nbsp;                    val updatedSessionInfo = sessionInfo.copy(isUntracking = true)</b>
 <b class="fc"><i class="no-highlight">706</i>&nbsp;                    sessionsMap[sessionId] = updatedSessionInfo</b>
 <b class="fc"><i class="no-highlight">707</i>&nbsp;                    stateMachine.removeAllListeners()</b>
-<b class="pc"><i class="no-highlight">708</i>&nbsp;                    checkNotNull(listener).onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)</b>
+<b class="fc"><i class="no-highlight">708</i>&nbsp;                    listener!!.onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)</b>
 <b class="fc"><i class="no-highlight">709</i>&nbsp;                    if (sessionsMap.containsKey(sessionId)) {</b>
 <b class="fc"><i class="no-highlight">710</i>&nbsp;                        doUntrackSession(sessionId, updatedSessionInfo.stateMachine)</b>
 <i class="no-highlight">711</i>&nbsp;                    }
 <i class="no-highlight">712</i>&nbsp;                } else {
 <b class="fc"><i class="no-highlight">713</i>&nbsp;                    doPersistAction { sessionTrackerStorage.updateSessionRecord(updatedSessionRecord) }</b>
-<b class="pc"><i class="no-highlight">714</i>&nbsp;                    checkNotNull(listener).onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)</b>
+<b class="fc"><i class="no-highlight">714</i>&nbsp;                    listener!!.onSessionStateChanged(this@SessionTracker, updatedSessionRecord, oldState)</b>
 <i class="no-highlight">715</i>&nbsp;                }
 <i class="no-highlight">716</i>&nbsp;            }
 <i class="no-highlight">717</i>&nbsp;        })
@@ -1065,7 +1065,7 @@ Current scope:     <a href="../../index.html">all classes</a>
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2022-01-01 22:58</div>
+    <div style="float:right;">generated on 2022-01-02 01:18</div>
 </div>
 </body>
 </html>
