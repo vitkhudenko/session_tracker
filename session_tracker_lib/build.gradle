@@ -58,6 +58,12 @@ task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
 }
 
+task cleanReports(type: Delete) {
+    delete file("/reports/")
+}
+
+tasks.clean.dependsOn(tasks.cleanReports)
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
