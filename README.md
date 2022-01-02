@@ -216,4 +216,4 @@ Typical simple SessionTracker usage implies being a singleton in your app.
 [dagger]: https://github.com/google/dagger
 [sample_app_dagger]: https://github.com/vitkhudenko/session_tracker/tree/master/sample_app_dagger
 
-[test_coverage]: https://rawcdn.githack.com/vitkhudenko/session_tracker/9c5881d3b68afb82001a9cab720f6439f2033c5a/session_tracker_lib/reports/kover/index.html
+[test_coverage]: https://rawcdn.githack.com/vitkhudenko/session_tracker/d6d20b86764c720e437c75355dcc3c65911a0dfa/session_tracker_lib/reports/kover/index.html
